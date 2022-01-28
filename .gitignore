@@ -1,2 +1,4 @@
 /target
 Cargo.lock
+/pthread/pthreads.2
+/pthread/QueueUserAPCEx
