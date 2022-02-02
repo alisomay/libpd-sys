@@ -5,11 +5,15 @@ use std::{env, path::PathBuf};
 // TODO: Make pd compilation settings configurable from cargo.
 const PD_EXTRA: &str = "true";
 const PD_LOCALE: &str = "false";
-// Multi instance support
-const PD_MULTI: &str = "false";
 const PD_UTILS: &str = "true";
 
 fn main() {
+    let mut pd_multi = "false";
+
+    if cfg!(feature = "multi") {
+        pd_multi = "true";
+    }
+
     let target_info = get_target_info();
 
     #[cfg(target_os = "windows")]
@@ -44,7 +48,7 @@ fn main() {
     let lib_destination = Config::new("libpd")
         .define("PD_EXTRA", PD_EXTRA)
         .define("PD_LOCALE", PD_LOCALE)
-        .define("PD_MULTI", PD_MULTI)
+        .define("PD_MULTI", pd_multi)
         .define("PD_UTILS", PD_UTILS)
         .define("CMAKE_THREAD_LIBS_INIT", pthread_lib)
         .define("PTHREADS_INCLUDE_DIR", pthread_include)
@@ -57,7 +61,7 @@ fn main() {
     let lib_destination = Config::new("libpd")
         .define("PD_EXTRA", PD_EXTRA)
         .define("PD_LOCALE", PD_LOCALE)
-        .define("PD_MULTI", PD_MULTI)
+        .define("PD_MULTI", pd_multi)
         .define("PD_UTILS", PD_UTILS)
         .no_build_target(true)
         .always_configure(true)
@@ -68,7 +72,7 @@ fn main() {
     let lib_destination = Config::new("libpd")
         .define("PD_EXTRA", PD_EXTRA)
         .define("PD_LOCALE", PD_LOCALE)
-        .define("PD_MULTI", PD_MULTI)
+        .define("PD_MULTI", pd_multi)
         .define("PD_UTILS", PD_UTILS)
         .define("CMAKE_OSX_ARCHITECTURES", "x86_64;arm64")
         .no_build_target(true)
