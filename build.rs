@@ -30,15 +30,7 @@ fn main() {
             "gnu" => "/x64/libpthreadGC2.a",
             _ => panic!("Unsupported compiler"),
         },
-        "i686" => match &*(target_info.compiler.unwrap()) {
-            "msvc" => "/x86/pthreadVC2.lib",
-            "gnu" => "/x86/libpthreadGC2.a",
-            _ => panic!("Unsupported compiler"),
-        },
-        // This is experimental, I've built this in a Windows 11 Arm VM, haven't tested yet
-        // I don't know what do here yet. Maybe I need to build one with msvc also?
-        "aarch64" => "/aarch64/libpthreadGC2.a",
-        //
+        "aarch64" => panic!("Windows aarch64 build is waiting for your support!"),
         _ => panic!("Unsupported architecture"),
     };
     #[cfg(target_os = "windows")]
@@ -101,7 +93,6 @@ fn main() {
     #[cfg(target_os = "windows")]
     println!("cargo:rustc-link-lib=static=libpd-static");
 
-    // Generate bindings
     let bindings = bindgen::Builder::default()
         .header("wrapper.h")
         .rustfmt_bindings(true)
