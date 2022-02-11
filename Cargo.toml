@@ -1,13 +1,16 @@
 [package]
 name = "libpd-sys"
 version = "0.1.0"
+authors = ["alisomay <alisomay@runbox.com>"]
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
-
-
+license = "MIT"
+description = "Rust bindings for libpd"
+readme = "README.md"
+homepage = "https://github.com/alisomay/libpd-sys"
+repository = "https://github.com/alisomay/libpd-sysl"
+documentation = "https://github.com/alisomay/libpd-sys#readme"
+keywords = ["puredata", "libpd", "audio", "midi", "bindings"]
+categories = ["external-ffi-bindings"]
 
 [build-dependencies]
 cmake = "0.1.48"
