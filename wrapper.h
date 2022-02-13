@@ -16,7 +16,7 @@
 // #include "libpd/pure-data/src/z_hooks.h"
 #include "libpd/pure-data/src/z_libpd.h"
 #include "libpd/pure-data/src/z_print_util.h"
-// #include "libpd/pure-data/src/z_queued.h"
+#include "libpd/pure-data/src/z_queued.h"
 // #include "libpd/pure-data/src/z_ringbuffer.h"
 
 // Headers in libpd_wrapper
