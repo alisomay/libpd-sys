@@ -8,10 +8,13 @@ const PD_LOCALE: &str = "false";
 const PD_UTILS: &str = "true";
 
 fn main() {
-    let mut pd_multi = "false";
+    // TODO: Put this out of future flags.
+    let mut pd_multi = "true";
+    let mut pd_multi_flag = true;
 
     if cfg!(feature = "multi") {
         pd_multi = "true";
+        pd_multi_flag = true;
     }
 
     let target_info = get_target_info();
@@ -73,25 +76,46 @@ fn main() {
         .build();
 
     let library_root = format!("{}/build/libs", lib_destination.as_path().display());
+    // dbg!(library_root);
+    // panic!();
     println!("cargo:rustc-link-search={library_root}");
 
     #[cfg(target_os = "macos")]
-    thin_fat_lib(&library_root);
-
     #[cfg(target_os = "macos")]
-    match &*target_info.arch {
-        // We now have two thin libs, one for each architecture, we need to link the appropriate one.
-        // libpd-x86_64.a and libpd-aarch64.a
-        "x86_64" => println!("cargo:rustc-link-lib=static=pd-x86_64"),
-        "aarch64" => println!("cargo:rustc-link-lib=static=pd-aarch64"),
-        _ => panic!("Unsupported architecture"),
+    if !pd_multi_flag {
+        thin_fat_lib(&library_root, false);
+        match &*target_info.arch {
+            // We now have two thin libs, one for each architecture, we need to link the appropriate one.
+            // libpd-x86_64.a and libpd-aarch64.a
+            "x86_64" => println!("cargo:rustc-link-lib=static=pd-x86_64"),
+            "aarch64" => println!("cargo:rustc-link-lib=static=pd-aarch64"),
+            _ => panic!("Unsupported architecture"),
+        }
+    } else {
+        thin_fat_lib(&library_root, true);
+        // TODO: Test this.
+        match &*target_info.arch {
+            // We now have two thin libs, one for each architecture, we need to link the appropriate one.
+            // libpd-x86_64.a and libpd-aarch64.a
+            "x86_64" => println!("cargo:rustc-link-lib=static=pd-multi-x86_64"),
+            "aarch64" => println!("cargo:rustc-link-lib=static=pd-multi-aarch64"),
+            _ => panic!("Unsupported architecture"),
+        }
     }
 
     #[cfg(target_os = "linux")]
-    println!("cargo:rustc-link-lib=static=pd");
+    if !pd_multi_flag {
+        println!("cargo:rustc-link-lib=static=pd");
+    } else {
+        println!("cargo:rustc-link-lib=static=pd-multi");
+    }
 
     #[cfg(target_os = "windows")]
-    println!("cargo:rustc-link-lib=static=libpd-static");
+    if !pd_multi_flag {
+        println!("cargo:rustc-link-lib=static=pd-static");
+    } else {
+        println!("cargo:rustc-link-lib=static=pd-multi-static");
+    }
 
     let bindings = bindgen::Builder::default()
         .header("wrapper.h")
@@ -140,23 +164,27 @@ fn get_target_info() -> TargetInfo {
 /// lipo libpd.a -thin arm64 -output libpd-aarch64.a
 /// lipo libpd.a -thin x86_64 -output libpd-x86_64.a
 /// ```
-fn thin_fat_lib(library_root: &str) {
+fn thin_fat_lib(library_root: &str, pd_multi: bool) {
+    let mut name = String::from("libpd");
+    if pd_multi {
+        name = format!("{}-multi", name);
+    }
     Command::new("lipo")
-        .arg(format!("{library_root}/libpd.a"))
+        .arg(format!("{library_root}/{name}.a"))
         .arg("-thin")
         // Apple calls aarch64, arm64
         .arg("arm64")
         .arg("-output")
-        .arg(format!("{library_root}/libpd-aarch64.a"))
+        .arg(format!("{library_root}/{name}-aarch64.a"))
         .spawn()
         .expect("lipo command failed to start");
 
     Command::new("lipo")
-        .arg(format!("{library_root}/libpd.a"))
+        .arg(format!("{library_root}/{name}.a"))
         .arg("-thin")
         .arg("x86_64")
         .arg("-output")
-        .arg(format!("{library_root}/libpd-x86_64.a"))
+        .arg(format!("{library_root}/{name}-x86_64.a"))
         .spawn()
         .expect("lipo command failed to start");
 }

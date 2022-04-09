@@ -5,7 +5,7 @@
 // #include "libpd/pure-data/src/g_canvas.h"
 // #include "libpd/pure-data/src/g_undo.h"
 // #include "libpd/pure-data/src/m_imp.h"
-// #include "libpd/pure-data/src/m_pd.h"
+#include "libpd/pure-data/src/m_pd.h"
 // #include "libpd/pure-data/src/s_audio_alsa.h"
 // #include "libpd/pure-data/src/s_audio_paring.h"
 // #include "libpd/pure-data/src/s_net.h"
