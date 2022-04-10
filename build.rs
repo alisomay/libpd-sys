@@ -2,12 +2,37 @@ use cmake::Config;
 use std::process::Command;
 use std::{env, path::PathBuf};
 
+// TODO: Correct header paths in libpd wrapper.
+
+// UTIL=true: compile utilities in libpd_wrapper/util (default)
+// EXTRA=true: compile pure-data/extra externals which are then inited in libpd_init() (default)
+// MULTI=true: compile with multiple instance support
+// LOCALE=false: do not set the LC_NUMERIC number format to the default "C" locale* (default)
+
+// DEBUG=true: compile with debug symbols & no optimizations
+// STATIC=true: compile static library (in addition to shared library)
+// FAT_LIB=true: compile universal "fat" lib with multiple architectures (macOS only)
+
+// PORTAUDIO=true: compile with portaudio support (currently JAVA jni only)
+// JAVA_HOME=/path/to/jdk: specify the path to the Java Development Kit
+
 // TODO: Make pd compilation settings configurable from cargo.
 const PD_EXTRA: &str = "true";
 const PD_LOCALE: &str = "false";
 const PD_UTILS: &str = "true";
 
+const PD_FLOATSIZE: &str = "64";
+
 fn main() {
+    let mut project_dir = std::path::PathBuf::new();
+    project_dir.push(std::env::var("CARGO_MANIFEST_DIR").unwrap());
+
+    let libpd_dir = project_dir.join("libpd");
+    let pd_source_dir = libpd_dir.join("pure-data/src");
+    let libpd_wrapper_dir = libpd_dir.join("libpd_wrapper");
+    let libpd_wrapper_util_dir = libpd_wrapper_dir.join("util");
+    let t = libpd_wrapper_dir.join("z_libpd.h");
+
     // TODO: Put this out of future flags.
     let mut pd_multi = "true";
     let mut pd_multi_flag = true;
@@ -19,8 +44,6 @@ fn main() {
 
     let target_info = get_target_info();
 
-    #[cfg(target_os = "windows")]
-    let project_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
     #[cfg(target_os = "windows")]
     let pthread_include = format!("{project_dir}/pthread/Pre-built.2/include");
     #[cfg(target_os = "windows")]
@@ -45,6 +68,7 @@ fn main() {
         .define("PD_LOCALE", PD_LOCALE)
         .define("PD_MULTI", pd_multi)
         .define("PD_UTILS", PD_UTILS)
+        .define("PD_FLOATSIZE", PD_FLOATSIZE)
         .define("CMAKE_THREAD_LIBS_INIT", pthread_lib)
         .define("PTHREADS_INCLUDE_DIR", pthread_include)
         .no_build_target(true)
@@ -58,6 +82,7 @@ fn main() {
         .define("PD_LOCALE", PD_LOCALE)
         .define("PD_MULTI", pd_multi)
         .define("PD_UTILS", PD_UTILS)
+        .define("PD_FLOATSIZE", PD_FLOATSIZE)
         .no_build_target(true)
         .always_configure(true)
         .very_verbose(true)
@@ -69,7 +94,13 @@ fn main() {
         .define("PD_LOCALE", PD_LOCALE)
         .define("PD_MULTI", pd_multi)
         .define("PD_UTILS", PD_UTILS)
+        .define("PD_FLOATSIZE", PD_FLOATSIZE)
         .define("CMAKE_OSX_ARCHITECTURES", "x86_64;arm64")
+        .cflag(format!("-I{}", pd_source_dir.to_string_lossy()))
+        .cflag(format!("-I{}", libpd_wrapper_dir.to_string_lossy()))
+        .cflag(format!("-I{}", libpd_wrapper_util_dir.to_string_lossy()))
+        .cflag(format!("-I{}", t.to_string_lossy()))
+        .cflag("-I/usr/local/include")
         .no_build_target(true)
         .always_configure(true)
         .very_verbose(true)
