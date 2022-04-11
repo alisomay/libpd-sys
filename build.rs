@@ -1,8 +1,12 @@
 use cmake::Config;
 use std::process::Command;
-use std::{env, path::PathBuf};
+use std::{
+    env,
+    path::{Path, PathBuf},
+};
 
-// TODO: Correct header paths in libpd wrapper.
+// All compilation settings defined in libpd documentation.
+// Maybe include some more of these later?
 
 // UTIL=true: compile utilities in libpd_wrapper/util (default)
 // EXTRA=true: compile pure-data/extra externals which are then inited in libpd_init() (default)
@@ -20,7 +24,6 @@ use std::{env, path::PathBuf};
 const PD_EXTRA: &str = "true";
 const PD_LOCALE: &str = "false";
 const PD_UTILS: &str = "true";
-
 const PD_FLOATSIZE: &str = "64";
 
 fn main() {
@@ -28,20 +31,16 @@ fn main() {
     project_dir.push(std::env::var("CARGO_MANIFEST_DIR").unwrap());
 
     let libpd_dir = project_dir.join("libpd");
-    let pd_source_dir = libpd_dir.join("pure-data/src");
+    // let pd_source_dir = libpd_dir.join("pure-data/src");
     let libpd_wrapper_dir = libpd_dir.join("libpd_wrapper");
-    let libpd_wrapper_util_dir = libpd_wrapper_dir.join("util");
-    let t = libpd_wrapper_dir.join("z_libpd.h");
 
-    // TODO: Put this out of future flags.
-    let mut pd_multi = "true";
-    let mut pd_multi_flag = true;
+    transform_pd_headers(&libpd_wrapper_dir);
 
-    if cfg!(feature = "multi") {
-        pd_multi = "true";
-        pd_multi_flag = true;
-    }
+    // Currently we're not compiling with multi instance support.
+    let pd_multi = "false";
+    let pd_multi_flag = false;
 
+    // Get info about the target.
     let target_info = get_target_info();
 
     #[cfg(target_os = "windows")]
@@ -96,22 +95,14 @@ fn main() {
         .define("PD_UTILS", PD_UTILS)
         .define("PD_FLOATSIZE", PD_FLOATSIZE)
         .define("CMAKE_OSX_ARCHITECTURES", "x86_64;arm64")
-        .cflag(format!("-I{}", pd_source_dir.to_string_lossy()))
-        .cflag(format!("-I{}", libpd_wrapper_dir.to_string_lossy()))
-        .cflag(format!("-I{}", libpd_wrapper_util_dir.to_string_lossy()))
-        .cflag(format!("-I{}", t.to_string_lossy()))
-        .cflag("-I/usr/local/include")
         .no_build_target(true)
         .always_configure(true)
         .very_verbose(true)
         .build();
 
     let library_root = format!("{}/build/libs", lib_destination.as_path().display());
-    // dbg!(library_root);
-    // panic!();
     println!("cargo:rustc-link-search={library_root}");
 
-    #[cfg(target_os = "macos")]
     #[cfg(target_os = "macos")]
     if !pd_multi_flag {
         thin_fat_lib(&library_root, false);
@@ -218,4 +209,41 @@ fn thin_fat_lib(library_root: &str, pd_multi: bool) {
         .arg(format!("{library_root}/{name}-x86_64.a"))
         .spawn()
         .expect("lipo command failed to start");
+}
+
+/// This is needed because somehow headers can not be found even if they are in the include path.
+///
+/// This is why we transform them to relative paths.
+fn transform_pd_headers(base: &Path) {
+    let libpd_wrapper_util_dir = base.join("util");
+    let z_print_util_h = libpd_wrapper_util_dir.join("z_print_util.h");
+    let z_queued_h = libpd_wrapper_util_dir.join("z_queued.h");
+    let x_libpdreceive_h = base.join("x_libpdreceive.h");
+    let z_libpd_h = base.join("z_libpd.h");
+
+    // z_libpd.h
+    let data = std::fs::read_to_string(&z_libpd_h).expect("Unable to read file");
+    let data = data.replace(
+        "#include \"m_pd.h\"",
+        "#include \"../pure-data/src/m_pd.h\"",
+    );
+    std::fs::write(&z_libpd_h, data).expect("Unable to write file");
+
+    // x_libpdreceive.h
+    let data = std::fs::read_to_string(&x_libpdreceive_h).expect("Unable to read file");
+    let data = data.replace(
+        "#include \"m_pd.h\"",
+        "#include \"../pure-data/src/m_pd.h\"",
+    );
+    std::fs::write(&x_libpdreceive_h, data).expect("Unable to write file");
+
+    // z_queued.h
+    let data = std::fs::read_to_string(&z_queued_h).expect("Unable to read file");
+    let data = data.replace("#include \"z_libpd.h\"", "#include \"../z_libpd.h\"");
+    std::fs::write(&z_queued_h, data).expect("Unable to write file");
+
+    // z_print_util.h
+    let data = std::fs::read_to_string(&z_print_util_h).expect("Unable to read file");
+    let data = data.replace("#include \"z_libpd.h\"", "#include \"../z_libpd.h\"");
+    std::fs::write(&z_print_util_h, data).expect("Unable to write file");
 }

@@ -2,7 +2,7 @@
 
 Rust bindings for [libpd](https://github.com/libpd/libpd).
 
-This crate is not meant to be used directly, but rather as a dependency of libpd-rs.
+This crate is not meant to be used directly, but rather as a dependency of [libpd-rs](https://github.com/alisomay/libpd-rs).
 
 ## Contribute
 
