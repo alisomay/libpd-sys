@@ -142,6 +142,7 @@ fn main() {
     let bindings = bindgen::Builder::default()
         .header("wrapper.h")
         .rustfmt_bindings(true)
+        .clang_arg(format!("-DPD_FLOATSIZE={PD_FLOATSIZE}"))
         // Tell cargo to invalidate the built crate whenever any of the
         // included header files changed.
         .parse_callbacks(Box::new(bindgen::CargoCallbacks))
