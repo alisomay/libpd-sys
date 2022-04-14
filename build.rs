@@ -20,20 +20,18 @@ use std::{
 // PORTAUDIO=true: compile with portaudio support (currently JAVA jni only)
 // JAVA_HOME=/path/to/jdk: specify the path to the Java Development Kit
 
-// TODO: Make pd compilation settings configurable from cargo.
 const PD_EXTRA: &str = "true";
 const PD_LOCALE: &str = "false";
 const PD_UTILS: &str = "true";
 const PD_FLOATSIZE: &str = "64";
 
 fn main() {
-    let mut project_dir = std::path::PathBuf::new();
-    project_dir.push(std::env::var("CARGO_MANIFEST_DIR").unwrap());
-
+    // Directories
+    let project_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let libpd_dir = project_dir.join("libpd");
-    // let pd_source_dir = libpd_dir.join("pure-data/src");
     let libpd_wrapper_dir = libpd_dir.join("libpd_wrapper");
 
+    // Transform #include parts in libpd sources to include right paths.
     transform_pd_headers(&libpd_wrapper_dir);
 
     // Currently we're not compiling with multi instance support.
@@ -43,100 +41,111 @@ fn main() {
     // Get info about the target.
     let target_info = get_target_info();
 
-    #[cfg(target_os = "windows")]
-    let pthread_include = format!("{project_dir}/pthread/Pre-built.2/include");
-    #[cfg(target_os = "windows")]
-    let pthread_lib_root = format!("{project_dir}/pthread/Pre-built.2/lib");
-    #[cfg(target_os = "windows")]
-    let pthread_lib = match &*target_info.arch {
-        // These two should work but haven't been tested yet
-        "x86_64" => match &*(target_info.compiler.unwrap()) {
-            "msvc" => "/x64/pthreadVC2.lib",
-            "gnu" => "/x64/libpthreadGC2.a",
-            _ => panic!("Unsupported compiler"),
-        },
-        "aarch64" => panic!("Windows aarch64 build is waiting for your support!"),
-        _ => panic!("Unsupported architecture"),
-    };
-    #[cfg(target_os = "windows")]
-    let pthread_lib = format!("{pthread_lib_root}{pthread_lib}");
+    /************* Windows build is experimental and currently failing **************/
 
     #[cfg(target_os = "windows")]
-    let lib_destination = Config::new("libpd")
-        .define("PD_EXTRA", PD_EXTRA)
-        .define("PD_LOCALE", PD_LOCALE)
-        .define("PD_MULTI", pd_multi)
-        .define("PD_UTILS", PD_UTILS)
-        .define("PD_FLOATSIZE", PD_FLOATSIZE)
-        .define("CMAKE_THREAD_LIBS_INIT", pthread_lib)
-        .define("PTHREADS_INCLUDE_DIR", pthread_include)
-        .no_build_target(true)
-        .always_configure(true)
-        .very_verbose(true)
-        .build();
+    {
+        let pthread_include = format!("{project_dir}/pthread/Pre-built.2/include");
+        let pthread_lib_root = format!("{project_dir}/pthread/Pre-built.2/lib");
 
-    #[cfg(target_os = "linux")]
-    let lib_destination = Config::new("libpd")
-        .define("PD_EXTRA", PD_EXTRA)
-        .define("PD_LOCALE", PD_LOCALE)
-        .define("PD_MULTI", pd_multi)
-        .define("PD_UTILS", PD_UTILS)
-        .define("PD_FLOATSIZE", PD_FLOATSIZE)
-        .no_build_target(true)
-        .always_configure(true)
-        .very_verbose(true)
-        .build();
-
-    #[cfg(target_os = "macos")]
-    let lib_destination = Config::new("libpd")
-        .define("PD_EXTRA", PD_EXTRA)
-        .define("PD_LOCALE", PD_LOCALE)
-        .define("PD_MULTI", pd_multi)
-        .define("PD_UTILS", PD_UTILS)
-        .define("PD_FLOATSIZE", PD_FLOATSIZE)
-        .define("CMAKE_OSX_ARCHITECTURES", "x86_64;arm64")
-        .no_build_target(true)
-        .always_configure(true)
-        .very_verbose(true)
-        .build();
-
-    let library_root = format!("{}/build/libs", lib_destination.as_path().display());
-    println!("cargo:rustc-link-search={library_root}");
-
-    #[cfg(target_os = "macos")]
-    if !pd_multi_flag {
-        thin_fat_lib(&library_root, false);
-        match &*target_info.arch {
-            // We now have two thin libs, one for each architecture, we need to link the appropriate one.
-            // libpd-x86_64.a and libpd-aarch64.a
-            "x86_64" => println!("cargo:rustc-link-lib=static=pd-x86_64"),
-            "aarch64" => println!("cargo:rustc-link-lib=static=pd-aarch64"),
+        let pthread_lib = match &*target_info.arch {
+            // These two should work but haven't been tested yet
+            "x86_64" => match &*(target_info.compiler.unwrap()) {
+                "msvc" => "/x64/pthreadVC2.lib",
+                "gnu" => "/x64/libpthreadGC2.a",
+                _ => panic!("Unsupported compiler"),
+            },
+            "aarch64" => panic!("Windows aarch64 build is waiting for your support!"),
             _ => panic!("Unsupported architecture"),
-        }
-    } else {
-        thin_fat_lib(&library_root, true);
-        // TODO: Test this.
-        match &*target_info.arch {
-            // We now have two thin libs, one for each architecture, we need to link the appropriate one.
-            // libpd-x86_64.a and libpd-aarch64.a
-            "x86_64" => println!("cargo:rustc-link-lib=static=pd-multi-x86_64"),
-            "aarch64" => println!("cargo:rustc-link-lib=static=pd-multi-aarch64"),
-            _ => panic!("Unsupported architecture"),
+        };
+
+        let pthread_lib = format!("{pthread_lib_root}{pthread_lib}");
+
+        let lib_destination = Config::new("libpd")
+            .define("PD_EXTRA", PD_EXTRA)
+            .define("PD_LOCALE", PD_LOCALE)
+            .define("PD_MULTI", pd_multi)
+            .define("PD_UTILS", PD_UTILS)
+            .define("PD_FLOATSIZE", PD_FLOATSIZE)
+            .define("CMAKE_THREAD_LIBS_INIT", pthread_lib)
+            .define("PTHREADS_INCLUDE_DIR", pthread_include)
+            .no_build_target(true)
+            .always_configure(true)
+            .very_verbose(true)
+            .build();
+
+        let library_root = format!("{}/build/libs", lib_destination.as_path().display());
+        println!("cargo:rustc-link-search={library_root}");
+
+        if !pd_multi_flag {
+            println!("cargo:rustc-link-lib=static=pd-static");
+        } else {
+            println!("cargo:rustc-link-lib=static=pd-multi-static");
         }
     }
 
+    /********************************************************/
+
     #[cfg(target_os = "linux")]
-    if !pd_multi_flag {
-        println!("cargo:rustc-link-lib=static=pd");
-    } else {
-        println!("cargo:rustc-link-lib=static=pd-multi");
+    {
+        let lib_destination = Config::new("libpd")
+            .define("PD_EXTRA", PD_EXTRA)
+            .define("PD_LOCALE", PD_LOCALE)
+            .define("PD_MULTI", pd_multi)
+            .define("PD_UTILS", PD_UTILS)
+            .define("PD_FLOATSIZE", PD_FLOATSIZE)
+            .no_build_target(true)
+            .always_configure(true)
+            .very_verbose(true)
+            .build();
+
+        let library_root = format!("{}/build/libs", lib_destination.as_path().display());
+        println!("cargo:rustc-link-search={library_root}");
+
+        if !pd_multi_flag {
+            println!("cargo:rustc-link-lib=static=pd");
+        } else {
+            println!("cargo:rustc-link-lib=static=pd-multi");
+        }
     }
 
-    #[cfg(target_os = "windows")]
-    if !pd_multi_flag {
-        println!("cargo:rustc-link-lib=static=pd-static");
-    } else {
-        println!("cargo:rustc-link-lib=static=pd-multi-static");
+    #[cfg(target_os = "macos")]
+    {
+        let lib_destination = Config::new("libpd")
+            .define("PD_EXTRA", PD_EXTRA)
+            .define("PD_LOCALE", PD_LOCALE)
+            .define("PD_MULTI", pd_multi)
+            .define("PD_UTILS", PD_UTILS)
+            .define("PD_FLOATSIZE", PD_FLOATSIZE)
+            .define("CMAKE_OSX_ARCHITECTURES", "x86_64;arm64")
+            .no_build_target(true)
+            .always_configure(true)
+            .very_verbose(true)
+            .build();
+
+        let library_root = format!("{}/build/libs", lib_destination.as_path().display());
+        println!("cargo:rustc-link-search={library_root}");
+
+        if !pd_multi_flag {
+            thin_fat_lib(&library_root, false);
+            match &*target_info.arch {
+                // We now have two thin libs, one for each architecture, we need to link the appropriate one.
+                // libpd-x86_64.a and libpd-aarch64.a
+                "x86_64" => println!("cargo:rustc-link-lib=static=pd-x86_64"),
+                "aarch64" => println!("cargo:rustc-link-lib=static=pd-aarch64"),
+                _ => panic!("Unsupported architecture"),
+            }
+        } else {
+            thin_fat_lib(&library_root, true);
+            // TODO: Test this.
+            match &*target_info.arch {
+                // We now have two thin libs, one for each architecture, we need to link the appropriate one.
+                // libpd-x86_64.a and libpd-aarch64.a
+                "x86_64" => println!("cargo:rustc-link-lib=static=pd-multi-x86_64"),
+                "aarch64" => println!("cargo:rustc-link-lib=static=pd-multi-aarch64"),
+                _ => panic!("Unsupported architecture"),
+            }
+        }
     }
 
     let bindings = bindgen::Builder::default()
