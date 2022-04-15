@@ -46,21 +46,21 @@ fn main() {
 
     #[cfg(target_os = "windows")]
     {
-        let pthread_include = format!("{project_dir}/pthread/Pre-built.2/include");
-        let pthread_lib_root = format!("{project_dir}/pthread/Pre-built.2/lib");
+        let pthread_include = project_dir.join("pthread/Pre-built.2/include");
+        let pthread_lib_root = project_dir.join("pthread/Pre-built.2/lib");
 
         let pthread_lib = match &*target_info.arch {
             // These two should work but haven't been tested yet
             "x86_64" => match &*(target_info.compiler.unwrap()) {
-                "msvc" => "/x64/pthreadVC2.lib",
-                "gnu" => "/x64/libpthreadGC2.a",
+                "msvc" => "x64/pthreadVC2.lib",
+                "gnu" => "x64/libpthreadGC2.a",
                 _ => panic!("Unsupported compiler"),
             },
             "aarch64" => panic!("Windows aarch64 build is waiting for your support!"),
             _ => panic!("Unsupported architecture"),
         };
 
-        let pthread_lib = format!("{pthread_lib_root}{pthread_lib}");
+        let pthread_lib = pthread_lib_root.join(pthread_lib);
 
         let lib_destination = Config::new("libpd")
             .define("PD_EXTRA", PD_EXTRA)
@@ -68,15 +68,15 @@ fn main() {
             .define("PD_MULTI", pd_multi)
             .define("PD_UTILS", PD_UTILS)
             .define("PD_FLOATSIZE", PD_FLOATSIZE)
-            .define("CMAKE_THREAD_LIBS_INIT", pthread_lib)
-            .define("PTHREADS_INCLUDE_DIR", pthread_include)
+            .define("CMAKE_THREAD_LIBS_INIT", pthread_lib.to_str().unwrap())
+            .define("PTHREADS_INCLUDE_DIR", pthread_include.to_str().unwrap())
             .no_build_target(true)
             .always_configure(true)
             .very_verbose(true)
             .build();
 
-        let library_root = format!("{}/build/libs", lib_destination.as_path().display());
-        println!("cargo:rustc-link-search={library_root}");
+        let library_root = lib_destination.join("build/libs");
+        println!("cargo:rustc-link-search={}", library_root.to_string_lossy());
 
         if !pd_multi_flag {
             println!("cargo:rustc-link-lib=static=pd-static");
@@ -100,8 +100,8 @@ fn main() {
             .very_verbose(true)
             .build();
 
-        let library_root = format!("{}/build/libs", lib_destination.as_path().display());
-        println!("cargo:rustc-link-search={library_root}");
+        let library_root = lib_destination.join("build/libs");
+        println!("cargo:rustc-link-search={}", library_root.to_string_lossy());
 
         if !pd_multi_flag {
             println!("cargo:rustc-link-lib=static=pd");
@@ -124,8 +124,8 @@ fn main() {
             .very_verbose(true)
             .build();
 
-        let library_root = format!("{}/build/libs", lib_destination.as_path().display());
-        println!("cargo:rustc-link-search={library_root}");
+        let library_root = lib_destination.join("build/libs");
+        println!("cargo:rustc-link-search={}", library_root.to_string_lossy());
 
         if !pd_multi_flag {
             thin_fat_lib(&library_root, false);
@@ -196,27 +196,28 @@ fn get_target_info() -> TargetInfo {
 /// lipo libpd.a -thin arm64 -output libpd-aarch64.a
 /// lipo libpd.a -thin x86_64 -output libpd-x86_64.a
 /// ```
-fn thin_fat_lib(library_root: &str, pd_multi: bool) {
+fn thin_fat_lib<T: AsRef<Path>>(library_root: T, pd_multi: bool) {
     let mut name = String::from("libpd");
     if pd_multi {
         name = format!("{}-multi", name);
     }
+    let root: &str = library_root.as_ref().to_str().unwrap();
     Command::new("lipo")
-        .arg(format!("{library_root}/{name}.a"))
+        .arg(format!("{root}/{name}.a"))
         .arg("-thin")
         // Apple calls aarch64, arm64
         .arg("arm64")
         .arg("-output")
-        .arg(format!("{library_root}/{name}-aarch64.a"))
+        .arg(format!("{root}/{name}-aarch64.a"))
         .spawn()
         .expect("lipo command failed to start");
 
     Command::new("lipo")
-        .arg(format!("{library_root}/{name}.a"))
+        .arg(format!("{root}/{name}.a"))
         .arg("-thin")
         .arg("x86_64")
         .arg("-output")
-        .arg(format!("{library_root}/{name}-x86_64.a"))
+        .arg(format!("{root}/{name}-x86_64.a"))
         .spawn()
         .expect("lipo command failed to start");
 }
