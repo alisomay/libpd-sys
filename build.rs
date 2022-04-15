@@ -42,6 +42,7 @@ fn main() {
     let target_info = get_target_info();
 
     /************* Windows build is experimental and currently failing **************/
+    // TODO: Fix and test windows build.
 
     #[cfg(target_os = "windows")]
     {
@@ -137,7 +138,6 @@ fn main() {
             }
         } else {
             thin_fat_lib(&library_root, true);
-            // TODO: Test this.
             match &*target_info.arch {
                 // We now have two thin libs, one for each architecture, we need to link the appropriate one.
                 // libpd-x86_64.a and libpd-aarch64.a
