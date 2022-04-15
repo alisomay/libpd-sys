@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use cmake::Config;
 use std::process::Command;
 use std::{
@@ -79,9 +81,9 @@ fn main() {
         println!("cargo:rustc-link-search={}", library_root.to_string_lossy());
 
         if !pd_multi_flag {
-            println!("cargo:rustc-link-lib=static=pd-static");
+            println!("cargo:rustc-link-lib=static=libpd-static");
         } else {
-            println!("cargo:rustc-link-lib=static=pd-multi-static");
+            println!("cargo:rustc-link-lib=static=libpd-multi-static");
         }
     }
 
