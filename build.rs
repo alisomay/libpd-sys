@@ -46,6 +46,9 @@ fn main() {
     /************* Windows build is experimental and currently failing **************/
     // TODO: Fix and test windows build.
 
+    // TODO: long int size
+    // TODO: pthread linking strategy, currently doesn't work.
+    // TODO: See that libpd's internal build system gets CMAKE arguments properly.
     #[cfg(target_os = "windows")]
     {
         let pthread_include = project_dir.join("pthread/Pre-built.2/include");
