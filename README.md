@@ -1,6 +1,6 @@
 # libpd-sys
 
-![Build Status](https://github.com/alisomay/libpd-sys/actions/workflows/ci.yml/badge.svg)
+[![Build Status](https://github.com/alisomay/libpd-sys/workflows/Build/badge.svg)](https://github.com/alisomay/libpd-sys/actions?query=workflow%3ABuild)
 
 Rust bindings for [libpd](https://github.com/libpd/libpd).
 
