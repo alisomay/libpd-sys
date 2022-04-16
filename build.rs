@@ -85,6 +85,10 @@ fn main() {
 
         let library_root = lib_destination.join("build/libs");
         println!("cargo:rustc-link-search={}", library_root.to_string_lossy());
+        // println!(
+        //     "cargo:rustc-link-search={}",
+        //     pthread_lib_root.join("x64").to_string_lossy()
+        // );
 
         if !pd_multi_flag {
             println!("cargo:rustc-link-lib=static=libpd-static");
