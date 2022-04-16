@@ -51,28 +51,51 @@ fn main() {
     // set(CMAKE_THREAD_LIBS_INIT CACHE PATH "Path to pthreads library binary file (ex. C:/src/vcpkg/packages/pthreads_x64-windows/lib/pthreadVC3.lib)")
     // set(PTHREADS_INCLUDE_DIR CACHE PATH "Path to folder with pthreads library header files (ex. C:/src/vcpkg/packages/pthreads_x64-windows/include)")
 
-    // TODO: Fix and test windows build.
-
-    // TODO: long int size
-    // TODO: pthread linking strategy, currently doesn't work.
-    // TODO: See that libpd's internal build system gets CMAKE arguments properly.
     #[cfg(target_os = "windows")]
     {
         let pthread_include = project_dir.join("pthread/Pre-built.2/include");
         let pthread_lib_root = project_dir.join("pthread/Pre-built.2/lib");
 
-        let pthread_lib = match &*target_info.arch {
+        let (pthread_lib_path, pthread_lib_name): (PathBuf, &str) = match &*target_info.arch {
             // These two should work but haven't been tested yet
             "x86_64" => match &*(target_info.compiler.unwrap()) {
-                "msvc" => "x64/pthreadVC2.lib",
-                "gnu" => "x64/libpthreadGC2.a",
+                "msvc" => {
+                    println!(
+                        "cargo:rustc-link-search={}",
+                        pthread_lib_root.join("x64").to_string_lossy()
+                    );
+                    (pthread_lib_root.join("x64/pthreadVC2.lib"), "pthreadVC2")
+                }
+                "gnu" => {
+                    println!(
+                        "cargo:rustc-link-search={}",
+                        pthread_lib_root.join("x64").to_string_lossy()
+                    );
+                    // lib at start?
+                    (pthread_lib_root.join("x64/libpthreadGC2.a"), "pthreadGC2")
+                }
                 _ => panic!("Unsupported compiler"),
             },
-            "aarch64" => panic!("Windows aarch64 build is waiting for your support!"),
+            "aarch64" => match &*(target_info.compiler.unwrap()) {
+                "msvc" => {
+                    unimplemented!("MSVC AArch64 support is not implemented yet");
+                }
+                "gnu" => {
+                    println!(
+                        "cargo:rustc-link-search={}",
+                        pthread_lib_root.join("aarch64").to_string_lossy()
+                    );
+                    // lib at start?
+                    (
+                        pthread_lib_root.join("aarch64/libpthreadGC2.a"),
+                        "pthreadGC2",
+                    )
+                }
+                _ => panic!("Unsupported compiler"),
+            },
+
             _ => panic!("Unsupported architecture"),
         };
-
-        let pthread_lib = pthread_lib_root.join(pthread_lib);
 
         let lib_destination = Config::new("libpd")
             .define("PD_EXTRA", PD_EXTRA)
@@ -80,16 +103,16 @@ fn main() {
             .define("PD_MULTI", pd_multi)
             .define("PD_UTILS", PD_UTILS)
             .cflag(format!("-DPD_FLOATSIZE={PD_FLOATSIZE}"))
-            // .define("CMAKE_THREAD_LIBS_INIT", pthread_lib.to_str().unwrap())
-            // .define("PTHREADS_INCLUDE_DIR", pthread_include.to_str().unwrap())
-            .define(
-                "CMAKE_THREAD_LIBS_INIT",
-                "C:\\vcpkg\\packages\\pthreads_x64-windows-static\\lib\\pthreadVC3.lib",
-            )
-            .define(
-                "PTHREADS_INCLUDE_DIR",
-                "C:\\vcpkg\\packages\\pthreads_x64-windows-static\\include",
-            )
+            .define("CMAKE_THREAD_LIBS_INIT", pthread_lib_path.to_str().unwrap())
+            .define("PTHREADS_INCLUDE_DIR", pthread_include.to_str().unwrap())
+            // .define(
+            //     "CMAKE_THREAD_LIBS_INIT",
+            //     "C:\\vcpkg\\packages\\pthreads_x64-windows-static\\lib\\pthreadVC3.lib",
+            // )
+            // .define(
+            //     "PTHREADS_INCLUDE_DIR",
+            //     "C:\\vcpkg\\packages\\pthreads_x64-windows-static\\include",
+            // )
             //hey
             .no_build_target(true)
             .always_configure(true)
@@ -98,12 +121,8 @@ fn main() {
 
         let library_root = lib_destination.join("build/libs");
         println!("cargo:rustc-link-search={}", library_root.to_string_lossy());
-        println!(
-            "cargo:rustc-link-search={}",
-            "C:\\vcpkg\\packages\\pthreads_x64-windows-static\\lib"
-        );
 
-        println!("cargo:rustc-link-lib=static=pthreadVC3");
+        println!("cargo:rustc-link-lib=static={}", pthread_lib_name);
         if !pd_multi_flag {
             println!("cargo:rustc-link-lib=static=libpd-static");
         } else {
