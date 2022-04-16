@@ -47,6 +47,10 @@ fn main() {
     let target_info = get_target_info();
 
     /************* Windows build is experimental and currently failing **************/
+
+    // set(CMAKE_THREAD_LIBS_INIT CACHE PATH "Path to pthreads library binary file (ex. C:/src/vcpkg/packages/pthreads_x64-windows/lib/pthreadVC3.lib)")
+    // set(PTHREADS_INCLUDE_DIR CACHE PATH "Path to folder with pthreads library header files (ex. C:/src/vcpkg/packages/pthreads_x64-windows/include)")
+
     // TODO: Fix and test windows build.
 
     // TODO: long int size
@@ -76,8 +80,17 @@ fn main() {
             .define("PD_MULTI", pd_multi)
             .define("PD_UTILS", PD_UTILS)
             .cflag(format!("-DPD_FLOATSIZE={PD_FLOATSIZE}"))
-            .define("CMAKE_THREAD_LIBS_INIT", pthread_lib.to_str().unwrap())
-            .define("PTHREADS_INCLUDE_DIR", pthread_include.to_str().unwrap())
+            // .define("CMAKE_THREAD_LIBS_INIT", pthread_lib.to_str().unwrap())
+            // .define("PTHREADS_INCLUDE_DIR", pthread_include.to_str().unwrap())
+            .define(
+                "CMAKE_THREAD_LIBS_INIT",
+                "C:\\vcpkg\\packages\\pthreads_x64-windows-static\\lib\\pthreadVC3.lib",
+            )
+            .define(
+                "PTHREADS_INCLUDE_DIR",
+                "C:\\vcpkg\\packages\\pthreads_x64-windows-static\\include",
+            )
+            //hey
             .no_build_target(true)
             .always_configure(true)
             .very_verbose(true)
@@ -85,10 +98,10 @@ fn main() {
 
         let library_root = lib_destination.join("build/libs");
         println!("cargo:rustc-link-search={}", library_root.to_string_lossy());
-        // println!(
-        //     "cargo:rustc-link-search={}",
-        //     pthread_lib_root.join("x64").to_string_lossy()
-        // );
+        println!(
+            "cargo:rustc-link-search={}",
+            "C:\\vcpkg\\packages\\pthreads_x64-windows-static\\lib\\pthreadVC3.lib"
+        );
 
         if !pd_multi_flag {
             println!("cargo:rustc-link-lib=static=libpd-static");
