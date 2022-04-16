@@ -47,7 +47,7 @@ fn main() {
     #[cfg(target_os = "windows")]
     {
         // For windows we need to link pthread.
-        // There are some prebuilt libraries for msvc and mingw for architectures x64 and arm.
+        // There are some prebuilt libraries for msvc and mingw for architectures x64 and arm64.
         // Mingw support is not tested yet but should work.
         let pthread_root = project_dir.join("pthreads");
 
