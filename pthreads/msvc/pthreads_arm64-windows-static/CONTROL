@@ -1,0 +1,8 @@
+Package: pthreads
+Version: 3.0.0
+Port-Version: 10
+Architecture: arm64-windows-static
+Multi-Arch: same
+Abi: df71ad7a8c0e650d2d252d4947670e4613512b1d8de71c5828acd8fb5147a188
+Description: pthreads for windows
+Type: Port

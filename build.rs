@@ -53,42 +53,55 @@ fn main() {
 
     #[cfg(target_os = "windows")]
     {
-        let pthread_include = project_dir.join("pthread/Pre-built.2/include");
-        let pthread_lib_root = project_dir.join("pthread/Pre-built.2/lib");
+        let pthread_root = project_dir.join("pthreads");
 
-        let (pthread_lib_path, pthread_lib_name): (PathBuf, &str) = match &*target_info.arch {
+        let (pthread_lib_root, pthread_lib_path, pthread_lib_name, pthread_include): (
+            PathBuf,
+            PathBuf,
+            &str,
+            PathBuf,
+        ) = match &*target_info.arch {
             // These two should work but haven't been tested yet
             "x86_64" => match &*(target_info.compiler.unwrap()) {
                 "msvc" => {
-                    println!(
-                        "cargo:rustc-link-search={}",
-                        pthread_lib_root.join("x64").to_string_lossy()
-                    );
-                    (pthread_lib_root.join("x64/pthreadVC2.lib"), "pthreadVC2")
+                    let lib_root = pthread_root.join("msvc/pthreads_x64-windows-static/lib");
+                    (
+                        lib_root.clone(),
+                        lib_root.join("pthreadVC3.lib"),
+                        "pthreadVC3",
+                        pthread_root.join("msvc/pthreads_x64-windows-static/include"),
+                    )
                 }
                 "gnu" => {
-                    println!(
-                        "cargo:rustc-link-search={}",
-                        pthread_lib_root.join("x64").to_string_lossy()
-                    );
-                    // lib at start?
-                    (pthread_lib_root.join("x64/libpthreadGC2.a"), "pthreadGC2")
+                    let lib_root = pthread_root.join("gnu/x64/lib");
+                    (
+                        lib_root.clone(),
+                        lib_root.join("libpthreadGC2.a"),
+                        // Re-visit this
+                        "pthreadGC2",
+                        pthread_root.join("gnu/include"),
+                    )
                 }
                 _ => panic!("Unsupported compiler"),
             },
             "aarch64" => match &*(target_info.compiler.unwrap()) {
                 "msvc" => {
-                    unimplemented!("MSVC AArch64 support is not implemented yet");
+                    let lib_root = pthread_root.join("msvc/pthreads_arm64-windows-static/lib");
+                    (
+                        lib_root.clone(),
+                        lib_root.join("pthreadVC3.lib"),
+                        "pthreadVC3",
+                        pthread_root.join("msvc/pthreads_arm64-windows-static/include"),
+                    )
                 }
                 "gnu" => {
-                    println!(
-                        "cargo:rustc-link-search={}",
-                        pthread_lib_root.join("aarch64").to_string_lossy()
-                    );
-                    // lib at start?
+                    let lib_root = pthread_root.join("gnu/aarch64/lib");
                     (
-                        pthread_lib_root.join("aarch64/libpthreadGC2.a"),
+                        lib_root.clone(),
+                        lib_root.join("libpthreadGC2.a"),
+                        // Re-visit this
                         "pthreadGC2",
+                        pthread_root.join("gnu/include"),
                     )
                 }
                 _ => panic!("Unsupported compiler"),
@@ -120,6 +133,10 @@ fn main() {
             .build();
 
         let library_root = lib_destination.join("build/libs");
+        println!(
+            "cargo:rustc-link-search={}",
+            pthread_lib_root.to_string_lossy()
+        );
         println!("cargo:rustc-link-search={}", library_root.to_string_lossy());
 
         println!("cargo:rustc-link-lib=static={}", pthread_lib_name);
