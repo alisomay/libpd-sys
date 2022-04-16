@@ -100,9 +100,10 @@ fn main() {
         println!("cargo:rustc-link-search={}", library_root.to_string_lossy());
         println!(
             "cargo:rustc-link-search={}",
-            "C:\\vcpkg\\packages\\pthreads_x64-windows-static\\lib\\pthreadVC3.lib"
+            "C:\\vcpkg\\packages\\pthreads_x64-windows-static\\lib"
         );
 
+        println!("cargo:rustc-link-lib=static=pthreadVC3");
         if !pd_multi_flag {
             println!("cargo:rustc-link-lib=static=libpd-static");
         } else {
