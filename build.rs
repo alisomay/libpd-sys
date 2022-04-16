@@ -28,6 +28,8 @@ const PD_LOCALE: &str = "false";
 const PD_UTILS: &str = "true";
 const PD_FLOATSIZE: &str = "64";
 
+// TODO: Do not build for 32 bit platforms.
+
 fn main() {
     // Directories
     let project_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
@@ -73,7 +75,7 @@ fn main() {
             .define("PD_LOCALE", PD_LOCALE)
             .define("PD_MULTI", pd_multi)
             .define("PD_UTILS", PD_UTILS)
-            .define("PD_FLOATSIZE", PD_FLOATSIZE)
+            .cflag(format!("-DPD_FLOATSIZE={PD_FLOATSIZE}"))
             .define("CMAKE_THREAD_LIBS_INIT", pthread_lib.to_str().unwrap())
             .define("PTHREADS_INCLUDE_DIR", pthread_include.to_str().unwrap())
             .no_build_target(true)
@@ -100,7 +102,7 @@ fn main() {
             .define("PD_LOCALE", PD_LOCALE)
             .define("PD_MULTI", pd_multi)
             .define("PD_UTILS", PD_UTILS)
-            .define("PD_FLOATSIZE", PD_FLOATSIZE)
+            .cflag(format!("-DPD_FLOATSIZE={PD_FLOATSIZE}"))
             .no_build_target(true)
             .always_configure(true)
             .very_verbose(true)
@@ -123,7 +125,7 @@ fn main() {
             .define("PD_LOCALE", PD_LOCALE)
             .define("PD_MULTI", pd_multi)
             .define("PD_UTILS", PD_UTILS)
-            .define("PD_FLOATSIZE", PD_FLOATSIZE)
+            .cflag(format!("-DPD_FLOATSIZE={PD_FLOATSIZE}"))
             .define("CMAKE_OSX_ARCHITECTURES", "x86_64;arm64")
             .no_build_target(true)
             .always_configure(true)
