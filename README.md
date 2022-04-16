@@ -8,5 +8,4 @@ This crate is not meant to be used directly, but rather as a dependency of [libp
 
 ## Contribute
 
-I need help completing the Windows section of the build script.
-Any contributions or PRs are more than welcome.
+There is always room for more testing and improvement on `build.rs`. If you're interested PRs are open.
