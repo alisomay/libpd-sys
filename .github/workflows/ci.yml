@@ -8,39 +8,40 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  # build_and_test_linux:
-  #   name: build-linux
-  #   runs-on: ubuntu-latest
-  #   strategy:
-  #     matrix:
-  #       toolchain:
-  #         - stable
-  #         # - beta
-  #         # - nightly
-  #   steps:
-  #     - uses: actions/checkout@v3
-  #       with:
-  #         submodules: recursive
-  #     - run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }}
-  #     - run: cargo build --verbose
+  build_and_test_linux:
+    name: build-linux
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        toolchain:
+          - stable
+          # - beta
+          # - nightly
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }}
+      - run: cargo build --verbose
+      - run: cargo test --verbose
 
-  # build_and_test_mac:
-  #   name: build-mac
-  #   runs-on: macos-latest
-  #   strategy:
-  #     matrix:
-  #       toolchain:
-  #         - stable
-  #         # - beta
-  #         # - nightly
-  #   steps:
-  #     - uses: actions/checkout@v3
-  #       with:
-  #         submodules: recursive
-  #     - run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }}
-  #     - run: cargo build --verbose
+  build_and_test_mac:
+    name: build-mac
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        toolchain:
+          - stable
+          # - beta
+          # - nightly
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }}
+      - run: cargo build --verbose
+      - run: cargo test --verbose
 
-  # TODO: Enable after windows build issues are resolved.
   build_and_test_windows:
     name: build-and-test-windows
     runs-on: windows-latest
@@ -55,6 +56,5 @@ jobs:
         with:
           submodules: recursive
       - run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }}
-      # - run: vcpkg.exe install pthread:x64-windows-static && cd C:\vcpkg && tree /f > tree.txt && cat tree.txt
       - run: cargo build --verbose
       - run: cargo test --verbose

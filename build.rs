@@ -8,8 +8,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-// All compilation settings defined in libpd documentation.
-// Maybe include some more of these later?
+// Defaults for libpd
 
 // UTIL=true: compile utilities in libpd_wrapper/util (default)
 // EXTRA=true: compile pure-data/extra externals which are then inited in libpd_init() (default)
@@ -28,15 +27,14 @@ const PD_LOCALE: &str = "false";
 const PD_UTILS: &str = "true";
 const PD_FLOATSIZE: &str = "64";
 
-// TODO: Do not build for 32 bit platforms.
-
 fn main() {
     // Directories
     let project_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let libpd_dir = project_dir.join("libpd");
     let libpd_wrapper_dir = libpd_dir.join("libpd_wrapper");
 
-    // Transform #include parts in libpd sources to include right paths.
+    // Transform values of the #include fields in libpd sources to include right paths.
+    // Somehow the build script complains if they don't include relative paths but just header names.
     transform_pd_headers(&libpd_wrapper_dir);
 
     // Currently we're not compiling with multi instance support.
@@ -46,13 +44,11 @@ fn main() {
     // Get info about the target.
     let target_info = get_target_info();
 
-    /************* Windows build is experimental and currently failing **************/
-
-    // set(CMAKE_THREAD_LIBS_INIT CACHE PATH "Path to pthreads library binary file (ex. C:/src/vcpkg/packages/pthreads_x64-windows/lib/pthreadVC3.lib)")
-    // set(PTHREADS_INCLUDE_DIR CACHE PATH "Path to folder with pthreads library header files (ex. C:/src/vcpkg/packages/pthreads_x64-windows/include)")
-
     #[cfg(target_os = "windows")]
     {
+        // For windows we need to link pthread.
+        // There are some prebuilt libraries for msvc and mingw for architectures x64 and arm.
+        // Mingw support is not tested yet but should work.
         let pthread_root = project_dir.join("pthreads");
 
         let (pthread_lib_root, pthread_lib_path, pthread_lib_name, pthread_include): (
@@ -61,15 +57,20 @@ fn main() {
             &str,
             PathBuf,
         ) = match &*target_info.arch {
-            // These two should work but haven't been tested yet
             "x86_64" => match &*(target_info.compiler.unwrap()) {
                 "msvc" => {
-                    let lib_root = pthread_root.join("msvc/pthreads_x64-windows-static/lib");
+                    let lib_root = pthread_root
+                        .join("msvc")
+                        .join("pthreads_x64-windows-static")
+                        .join("lib");
                     (
                         lib_root.clone(),
                         lib_root.join("pthreadVC3.lib"),
                         "pthreadVC3",
-                        pthread_root.join("msvc/pthreads_x64-windows-static/include"),
+                        pthread_root
+                            .join("msvc")
+                            .join("pthreads_x64-windows-static")
+                            .join("include"),
                     )
                 }
                 "gnu" => {
@@ -79,19 +80,25 @@ fn main() {
                         lib_root.join("libpthreadGC2.a"),
                         // Re-visit this
                         "pthreadGC2",
-                        pthread_root.join("gnu/include"),
+                        pthread_root.join("gnu").join("include"),
                     )
                 }
                 _ => panic!("Unsupported compiler"),
             },
             "aarch64" => match &*(target_info.compiler.unwrap()) {
                 "msvc" => {
-                    let lib_root = pthread_root.join("msvc/pthreads_arm64-windows-static/lib");
+                    let lib_root = pthread_root
+                        .join("msvc")
+                        .join("pthreads_arm64-windows-static")
+                        .join("lib");
                     (
                         lib_root.clone(),
                         lib_root.join("pthreadVC3.lib"),
                         "pthreadVC3",
-                        pthread_root.join("msvc/pthreads_arm64-windows-static/include"),
+                        pthread_root
+                            .join("msvc")
+                            .join("pthreads_arm64-windows-static")
+                            .join("include"),
                     )
                 }
                 "gnu" => {
@@ -101,13 +108,12 @@ fn main() {
                         lib_root.join("libpthreadGC2.a"),
                         // Re-visit this
                         "pthreadGC2",
-                        pthread_root.join("gnu/include"),
+                        pthread_root.join("gnu").join("include"),
                     )
                 }
                 _ => panic!("Unsupported compiler"),
             },
-
-            _ => panic!("Unsupported architecture"),
+            _ => panic!("Unsupported architecture: {}", target_info.arch),
         };
 
         let lib_destination = Config::new("libpd")
@@ -118,28 +124,24 @@ fn main() {
             .cflag(format!("-DPD_FLOATSIZE={PD_FLOATSIZE}"))
             .define("CMAKE_THREAD_LIBS_INIT", pthread_lib_path.to_str().unwrap())
             .define("PTHREADS_INCLUDE_DIR", pthread_include.to_str().unwrap())
-            // .define(
-            //     "CMAKE_THREAD_LIBS_INIT",
-            //     "C:\\vcpkg\\packages\\pthreads_x64-windows-static\\lib\\pthreadVC3.lib",
-            // )
-            // .define(
-            //     "PTHREADS_INCLUDE_DIR",
-            //     "C:\\vcpkg\\packages\\pthreads_x64-windows-static\\include",
-            // )
-            //hey
             .no_build_target(true)
             .always_configure(true)
             .very_verbose(true)
             .build();
 
         let library_root = lib_destination.join("build/libs");
+
+        // Look for pthread
         println!(
             "cargo:rustc-link-search={}",
             pthread_lib_root.to_string_lossy()
         );
+        // Look for libpd
         println!("cargo:rustc-link-search={}", library_root.to_string_lossy());
 
+        // Link pthread
         println!("cargo:rustc-link-lib=static={}", pthread_lib_name);
+        // Link libpd
         if !pd_multi_flag {
             println!("cargo:rustc-link-lib=static=libpd-static");
         } else {
@@ -147,10 +149,10 @@ fn main() {
         }
     }
 
-    /********************************************************/
-
     #[cfg(target_os = "linux")]
     {
+        // I love linux.. everything is concise and simple :)
+
         let lib_destination = Config::new("libpd")
             .define("PD_EXTRA", PD_EXTRA)
             .define("PD_LOCALE", PD_LOCALE)
@@ -187,9 +189,13 @@ fn main() {
             .build();
 
         let library_root = lib_destination.join("build/libs");
+
+        // Look for libpd
         println!("cargo:rustc-link-search={}", library_root.to_string_lossy());
 
+        // Link libpd
         if !pd_multi_flag {
+            // Thins the fat library with lipo, rust linker does not like fat libs..
             thin_fat_lib(&library_root, false);
             match &*target_info.arch {
                 // We now have two thin libs, one for each architecture, we need to link the appropriate one.
@@ -199,6 +205,7 @@ fn main() {
                 _ => panic!("Unsupported architecture"),
             }
         } else {
+            // Thins the fat library with lipo, rust linker does not like fat libs..
             thin_fat_lib(&library_root, true);
             match &*target_info.arch {
                 // We now have two thin libs, one for each architecture, we need to link the appropriate one.
@@ -210,9 +217,11 @@ fn main() {
         }
     }
 
+    // Generate bindings
     let bindings = bindgen::Builder::default()
         .header("wrapper.h")
         .rustfmt_bindings(true)
+        // This is important to generate the right types.
         .clang_arg(format!("-DPD_FLOATSIZE={PD_FLOATSIZE}"))
         // Tell cargo to invalidate the built crate whenever any of the
         // included header files changed.
@@ -225,6 +234,7 @@ fn main() {
         .expect("Couldn't write bindings!");
 }
 
+/// Parsed version of a target triple.
 #[allow(dead_code)]
 #[derive(Debug)]
 struct TargetInfo {
@@ -233,6 +243,7 @@ struct TargetInfo {
     os: String,
     compiler: Option<String>,
 }
+
 impl From<Vec<&str>> for TargetInfo {
     fn from(info: Vec<&str>) -> Self {
         TargetInfo {
@@ -246,6 +257,7 @@ impl From<Vec<&str>> for TargetInfo {
     }
 }
 
+/// Gets info about our target.
 fn get_target_info() -> TargetInfo {
     let info = std::env::var("TARGET").unwrap();
     let info: Vec<&str> = info.split('-').collect();
