@@ -11,6 +11,13 @@ repository = "https://github.com/alisomay/libpd-sys"
 documentation = "https://github.com/alisomay/libpd-sys#readme"
 keywords = ["puredata", "libpd", "audio", "midi", "bindings"]
 categories = ["external-ffi-bindings"]
+# These are unneeded and too big for a crate upload.
+exclude = [
+    "libpd/pure-data/doc/**/*",
+    "libpd/pure-data/mac/**/*",
+    "libpd/pure-data/msw/**/*",
+    "libpd/pure-data/font/**/*",
+]
 
 [build-dependencies]
 cmake = "0.1.48"
