@@ -48,15 +48,6 @@ fn main() {
     // Get info about the target.
     let target_info = get_target_info();
 
-    let (include_prefix, define_prefix) = if let Some(ref compiler) = target_info.compiler {
-        match compiler.as_str() {
-            "msvc" => ("/I", "/D"),
-            _ => ("-I", "-D"),
-        }
-    } else {
-        ("-I", "-D")
-    };
-
     #[cfg(target_os = "windows")]
     {
         // For windows we need to link pthread.
@@ -144,9 +135,9 @@ fn main() {
                 "{include_prefix}{}",
                 libpd_wrapper_util_dir.to_string_lossy()
             ))
-            .cflag(format!("{define_prefix}PD_FLOATSIZE={PD_FLOATSIZE}"))
-            .define("CMAKE_THREAD_LIBS_INIT", pthread_lib_path.to_str().unwrap())
-            .define("PTHREADS_INCLUDE_DIR", pthread_include.to_str().unwrap())
+            .cflag(format!("-DPD_FLOATSIZE={PD_FLOATSIZE}"))
+            .define("CMAKE_THREAD_LIBS_INIT", pthread_lib_path.to_string_lossy())
+            .define("PTHREADS_INCLUDE_DIR", pthread_include.to_string_lossy())
             .no_build_target(true)
             .always_configure(true)
             .very_verbose(true)
@@ -182,16 +173,10 @@ fn main() {
             .define("PD_MULTI", pd_multi)
             .define("PD_UTILS", PD_UTILS)
             .define("DOUBLE", "true")
-            .cflag(format!("{include_prefix}{}", pd_source.to_string_lossy()))
-            .cflag(format!(
-                "{include_prefix}{}",
-                libpd_wrapper_dir.to_string_lossy()
-            ))
-            .cflag(format!(
-                "{include_prefix}{}",
-                libpd_wrapper_util_dir.to_string_lossy()
-            ))
-            .cflag(format!("{define_prefix}PD_FLOATSIZE={PD_FLOATSIZE}"))
+            .cflag(format!("-I{}", pd_source.to_string_lossy()))
+            .cflag(format!("-I{}", libpd_wrapper_dir.to_string_lossy()))
+            .cflag(format!("-I{}", libpd_wrapper_util_dir.to_string_lossy()))
+            .cflag(format!("-DPD_FLOATSIZE={PD_FLOATSIZE}"))
             .no_build_target(true)
             .always_configure(true)
             .very_verbose(true)
@@ -215,19 +200,10 @@ fn main() {
             .define("PD_MULTI", pd_multi)
             .define("PD_UTILS", PD_UTILS)
             .define("DOUBLE", "true")
-            .cflag(format!(
-                "{include_prefix}\"{}\"",
-                pd_source.to_string_lossy()
-            ))
-            .cflag(format!(
-                "{include_prefix}{}",
-                libpd_wrapper_dir.to_string_lossy()
-            ))
-            .cflag(format!(
-                "{include_prefix}{}",
-                libpd_wrapper_util_dir.to_string_lossy()
-            ))
-            .cflag(format!("{define_prefix}PD_FLOATSIZE={PD_FLOATSIZE}"))
+            .cflag(format!("-I{}", pd_source.to_string_lossy()))
+            .cflag(format!("-I{}", libpd_wrapper_dir.to_string_lossy()))
+            .cflag(format!("-I{}", libpd_wrapper_util_dir.to_string_lossy()))
+            .cflag(format!("-DPD_FLOATSIZE={PD_FLOATSIZE}"))
             .define("CMAKE_OSX_ARCHITECTURES", "x86_64;arm64")
             .no_build_target(true)
             .always_configure(true)
@@ -267,19 +243,11 @@ fn main() {
     let bindings = bindgen::Builder::default()
         .header("wrapper.h")
         .rustfmt_bindings(true)
-        .clang_arg(format!(
-            "{include_prefix}\"{}\"",
-            pd_source.to_string_lossy()
-        ))
-        .clang_arg(format!(
-            "{include_prefix}{}",
-            libpd_wrapper_dir.to_string_lossy()
-        ))
-        .clang_arg(format!(
-            "{include_prefix}{}",
-            libpd_wrapper_util_dir.to_string_lossy()
-        ))
-        .clang_arg(format!("{define_prefix}PD_FLOATSIZE={PD_FLOATSIZE}"))
+        .clang_arg(format!("-I{}", pd_source.to_string_lossy()))
+        .clang_arg(format!("-I{}", libpd_wrapper_dir.to_string_lossy()))
+        .clang_arg(format!("-I{}", libpd_wrapper_util_dir.to_string_lossy()))
+        // This is important to generate the right types.
+        .clang_arg(format!("-DPD_FLOATSIZE={PD_FLOATSIZE}"))
         // Tell cargo to invalidate the built crate whenever any of the
         // included header files changed.
         .parse_callbacks(Box::new(bindgen::CargoCallbacks))
