@@ -3,6 +3,6 @@ update_dependencies:
 update_submodules:
     git submodule update --recursive --remote
 test_publish:
-    cargo publish --dry-run --allow-dirty
+    cargo publish --dry-run 
 publish:
-    cargo publish --allow-dirty
+    cargo publish
