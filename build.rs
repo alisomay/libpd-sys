@@ -35,7 +35,8 @@ fn main() {
 
     // Transform values of the #include fields in libpd sources to include right paths.
     // Somehow the build script complains if they don't include relative paths but just header names.
-    transform_pd_headers(&libpd_wrapper_dir);
+    // !! Only for local development.
+    // transform_pd_headers(&libpd_wrapper_dir);
 
     // Currently we're not compiling with multi instance support.
     let pd_multi = "false";
