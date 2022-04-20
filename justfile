@@ -3,6 +3,6 @@ update_dependencies:
 update_submodules:
     git submodule update --recursive --remote
 test_publish:
-    cargo publish --dry-run 
+    cd libpd && git stash && cd .. && git submodule update --init --recursive --remote && cargo publish --dry-run 
 publish:
-    cargo publish
+    cd libpd && git stash && cd .. && git submodule update --init --recursive --remote && cargo publish
