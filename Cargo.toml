@@ -1,6 +1,6 @@
 [package]
 name = "libpd-sys"
-version = "0.1.8"
+version = "0.1.9"
 authors = ["alisomay <alisomay@runbox.com>"]
 edition = "2021"
 license = "BSD-3-Clause"
@@ -8,7 +8,7 @@ description = "Rust bindings for libpd"
 readme = "README.md"
 homepage = "https://github.com/alisomay/libpd-sys"
 repository = "https://github.com/alisomay/libpd-sys"
-documentation = "https://docs.rs/libpd-sys/0.1.8/libpd_rs/#"
+documentation = "https://docs.rs/libpd-sys/0.1.9/libpd_sys/"
 keywords = ["puredata", "libpd", "audio", "midi", "bindings"]
 categories = ["external-ffi-bindings"]
 # These are unneeded and too big for a crate upload.
@@ -22,3 +22,4 @@ exclude = [
 [build-dependencies]
 cmake = "0.1.48"
 bindgen = "0.59.2"
+

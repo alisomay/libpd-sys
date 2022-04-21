@@ -10,6 +10,8 @@ This crate is not meant to be used directly, but rather as a dependency of [libp
 
 There is always room for more testing and improvement on `build.rs`. If you're interested PRs are open.
 
+Or if you wish you can add support for the unsupported platforms.
+
 ## Support
 
 - Desktop
