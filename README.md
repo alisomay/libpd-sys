@@ -45,3 +45,9 @@ Or if you wish you can add support for the unsupported platforms.
   - Android (not yet but will be addressed)
 
 - Web (not yet but will be addressed)
+
+## Change log
+
+- 0.2.0
+  - Add preparation and support for bundling externals
+  - Change `libpd` submodule to track <https://github.com/alisomay/libpd> `libpdrs` branch.
