@@ -35,6 +35,7 @@ fn main() {
     let pd_source = libpd_dir.join("pure-data").join("src");
     let libpd_wrapper_dir = libpd_dir.join("libpd_wrapper");
     let libpd_wrapper_util_dir = libpd_wrapper_dir.join("util");
+    let externals_dir = libpd_wrapper_dir.join("libpd_rs_bundled").join("externals");
 
     // Transform values of the #include fields in libpd sources to include right paths.
     // Somehow the build script complains if they don't include relative paths but just header names.
@@ -130,16 +131,16 @@ fn main() {
             .cflag(format!("-I{}", libpd_wrapper_util_dir.to_str().unwrap()))
             .cflag(format!(
                 "-I{}",
-                libpd_wrapper_dir
-                    .join("libpd_rs_bundled_externals")
-                    .join("externals")
-                    .to_str()
-                    .unwrap()
+                externals_dir.join("freeverb").to_str().unwrap()
+            ))
+            .cflag(format!(
+                "-I{}",
+                externals_dir.join("ggee").to_str().unwrap()
             ))
             .cflag(format!(
                 "-I{}",
                 libpd_wrapper_dir
-                    .join("libpd_rs_bundled_externals")
+                    .join("libpd_rs_bundled")
                     .join("header")
                     .to_str()
                     .unwrap()
@@ -186,16 +187,16 @@ fn main() {
             .cflag(format!("-I{}", libpd_wrapper_util_dir.to_str().unwrap()))
             .cflag(format!(
                 "-I{}",
-                libpd_wrapper_dir
-                    .join("libpd_rs_bundled_externals")
-                    .join("externals")
-                    .to_str()
-                    .unwrap()
+                externals_dir.join("freeverb").to_str().unwrap()
+            ))
+            .cflag(format!(
+                "-I{}",
+                externals_dir.join("ggee").to_str().unwrap()
             ))
             .cflag(format!(
                 "-I{}",
                 libpd_wrapper_dir
-                    .join("libpd_rs_bundled_externals")
+                    .join("libpd_rs_bundled")
                     .join("header")
                     .to_str()
                     .unwrap()
@@ -228,16 +229,16 @@ fn main() {
             .cflag(format!("-I{}", libpd_wrapper_util_dir.to_str().unwrap()))
             .cflag(format!(
                 "-I{}",
-                libpd_wrapper_dir
-                    .join("libpd_rs_bundled_externals")
-                    .join("externals")
-                    .to_str()
-                    .unwrap()
+                externals_dir.join("freeverb").to_str().unwrap()
+            ))
+            .cflag(format!(
+                "-I{}",
+                externals_dir.join("ggee").to_str().unwrap()
             ))
             .cflag(format!(
                 "-I{}",
                 libpd_wrapper_dir
-                    .join("libpd_rs_bundled_externals")
+                    .join("libpd_rs_bundled")
                     .join("header")
                     .to_str()
                     .unwrap()

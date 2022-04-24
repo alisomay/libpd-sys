@@ -6,6 +6,17 @@ Rust bindings for [libpd](https://github.com/libpd/libpd).
 
 This crate is not meant to be used directly, but rather as a dependency of [libpd-rs](https://github.com/alisomay/libpd-rs).
 
+## List of bundled externals
+
+This will be a growing list of bundled externals.
+
+The way to add externals to [libpd](https://github.com/libpd/libpd) is to compile and statically link them.
+
+In the future, some external packs will be made features.
+
+- `moog~`
+- `freeverb~`
+
 ## Contribute
 
 There is always room for more testing and improvement on `build.rs`. If you're interested PRs are open.
