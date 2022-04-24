@@ -128,6 +128,22 @@ fn main() {
             .cflag(format!("-I{}", pd_source.to_str().unwrap()))
             .cflag(format!("-I{}", libpd_wrapper_dir.to_str().unwrap()))
             .cflag(format!("-I{}", libpd_wrapper_util_dir.to_str().unwrap()))
+            .cflag(format!(
+                "-I{}",
+                libpd_wrapper_dir
+                    .join("libpd_rs_bundled_externals")
+                    .join("externals")
+                    .to_str()
+                    .unwrap()
+            ))
+            .cflag(format!(
+                "-I{}",
+                libpd_wrapper_dir
+                    .join("libpd_rs_bundled_externals")
+                    .join("header")
+                    .to_str()
+                    .unwrap()
+            ))
             .cflag(format!("-DPD_FLOATSIZE={PD_FLOATSIZE}"))
             .define("CMAKE_THREAD_LIBS_INIT", pthread_lib_path.to_str().unwrap())
             .define("PTHREADS_INCLUDE_DIR", pthread_include.to_str().unwrap())
@@ -168,6 +184,22 @@ fn main() {
             .cflag(format!("-I{}", pd_source.to_str().unwrap()))
             .cflag(format!("-I{}", libpd_wrapper_dir.to_str().unwrap()))
             .cflag(format!("-I{}", libpd_wrapper_util_dir.to_str().unwrap()))
+            .cflag(format!(
+                "-I{}",
+                libpd_wrapper_dir
+                    .join("libpd_rs_bundled_externals")
+                    .join("externals")
+                    .to_str()
+                    .unwrap()
+            ))
+            .cflag(format!(
+                "-I{}",
+                libpd_wrapper_dir
+                    .join("libpd_rs_bundled_externals")
+                    .join("header")
+                    .to_str()
+                    .unwrap()
+            ))
             .cflag(format!("-DPD_FLOATSIZE={PD_FLOATSIZE}"))
             .no_build_target(true)
             .always_configure(true)
@@ -194,6 +226,22 @@ fn main() {
             .cflag(format!("-I{}", pd_source.to_str().unwrap()))
             .cflag(format!("-I{}", libpd_wrapper_dir.to_str().unwrap()))
             .cflag(format!("-I{}", libpd_wrapper_util_dir.to_str().unwrap()))
+            .cflag(format!(
+                "-I{}",
+                libpd_wrapper_dir
+                    .join("libpd_rs_bundled_externals")
+                    .join("externals")
+                    .to_str()
+                    .unwrap()
+            ))
+            .cflag(format!(
+                "-I{}",
+                libpd_wrapper_dir
+                    .join("libpd_rs_bundled_externals")
+                    .join("header")
+                    .to_str()
+                    .unwrap()
+            ))
             .cflag(format!("-DPD_FLOATSIZE={PD_FLOATSIZE}"))
             .define("CMAKE_OSX_ARCHITECTURES", "x86_64;arm64")
             .no_build_target(true)
