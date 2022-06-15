@@ -291,8 +291,12 @@ fn main() {
         // included header files changed.
         .parse_callbacks(Box::new(bindgen::CargoCallbacks));
     #[cfg(target_os = "windows")]
-    bindings_builder.clang_arg(format!("-D{}", WISH));
+    let bindings = bindings_builder
+        .clang_arg(format!("-D{}", WISH))
+        .generate()
+        .expect("Unable to generate bindings");
 
+    #[cfg(not(target_os = "windows"))]
     let bindings = bindings_builder
         .generate()
         .expect("Unable to generate bindings");
