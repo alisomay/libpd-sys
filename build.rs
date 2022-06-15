@@ -27,6 +27,9 @@ const PD_LOCALE: &str = "false";
 const PD_UTILS: &str = "true";
 const PD_FLOATSIZE: &str = "64";
 
+#[cfg(target_os = "windows")]
+const WISH: &str = "wish86.exe";
+
 fn main() {
     // Directories
     let project_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
@@ -126,6 +129,7 @@ fn main() {
             .define("PD_LOCALE", PD_LOCALE)
             .define("PD_MULTI", pd_multi)
             .define("PD_UTILS", PD_UTILS)
+            .cflag(format!("-D{}", WISH))
             .cflag(format!("-I{}", pd_source.to_str().unwrap()))
             .cflag(format!("-I{}", libpd_wrapper_dir.to_str().unwrap()))
             .cflag(format!("-I{}", libpd_wrapper_util_dir.to_str().unwrap()))
