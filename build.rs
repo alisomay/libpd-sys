@@ -40,11 +40,6 @@ fn main() {
     let libpd_wrapper_util_dir = libpd_wrapper_dir.join("util");
     let externals_dir = libpd_wrapper_dir.join("libpd_rs_bundled").join("externals");
 
-    // Transform values of the #include fields in libpd sources to include right paths.
-    // Somehow the build script complains if they don't include relative paths but just header names.
-    // !! Only for local development.
-    // transform_pd_headers(&libpd_wrapper_dir);
-
     // Currently we're not compiling with multi instance support.
     let pd_multi = "false";
     let pd_multi_flag = false;
@@ -284,7 +279,7 @@ fn main() {
     }
 
     // Generate bindings
-    let bindings = bindgen::Builder::default()
+    let mut bindings_builder = bindgen::Builder::default()
         .header("wrapper.h")
         .rustfmt_bindings(true)
         .clang_arg(format!("-I{}", pd_source.to_str().unwrap()))
@@ -294,10 +289,16 @@ fn main() {
         .clang_arg(format!("-DPD_FLOATSIZE={PD_FLOATSIZE}"))
         // Tell cargo to invalidate the built crate whenever any of the
         // included header files changed.
-        .parse_callbacks(Box::new(bindgen::CargoCallbacks))
+        .parse_callbacks(Box::new(bindgen::CargoCallbacks));
+    #[cfg(target_os = "windows")]
+    bindings_builder.clang_arg(format!("-D{}", WISH));
+
+    let bindings = bindings_builder
         .generate()
         .expect("Unable to generate bindings");
+
     let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());
+
     bindings
         .write_to_file(out_path.join("bindings.rs"))
         .expect("Couldn't write bindings!");
@@ -363,41 +364,4 @@ fn thin_fat_lib<T: AsRef<Path>>(library_root: T, pd_multi: bool) {
         .arg(format!("{root}/{name}-x86_64.a"))
         .spawn()
         .expect("lipo command failed to start");
-}
-
-/// This is needed because somehow headers can not be found even if they are in the include path.
-///
-/// This is why we transform them to relative paths.
-fn transform_pd_headers(base: &Path) {
-    let libpd_wrapper_util_dir = base.join("util");
-    let z_print_util_h = libpd_wrapper_util_dir.join("z_print_util.h");
-    let z_queued_h = libpd_wrapper_util_dir.join("z_queued.h");
-    let x_libpdreceive_h = base.join("x_libpdreceive.h");
-    let z_libpd_h = base.join("z_libpd.h");
-
-    // z_libpd.h
-    let data = std::fs::read_to_string(&z_libpd_h).expect("Unable to read file");
-    let data = data.replace(
-        "#include \"m_pd.h\"",
-        "#include \"../pure-data/src/m_pd.h\"",
-    );
-    std::fs::write(&z_libpd_h, data).expect("Unable to write file");
-
-    // x_libpdreceive.h
-    let data = std::fs::read_to_string(&x_libpdreceive_h).expect("Unable to read file");
-    let data = data.replace(
-        "#include \"m_pd.h\"",
-        "#include \"../pure-data/src/m_pd.h\"",
-    );
-    std::fs::write(&x_libpdreceive_h, data).expect("Unable to write file");
-
-    // z_queued.h
-    let data = std::fs::read_to_string(&z_queued_h).expect("Unable to read file");
-    let data = data.replace("#include \"z_libpd.h\"", "#include \"../z_libpd.h\"");
-    std::fs::write(&z_queued_h, data).expect("Unable to write file");
-
-    // z_print_util.h
-    let data = std::fs::read_to_string(&z_print_util_h).expect("Unable to read file");
-    let data = data.replace("#include \"z_libpd.h\"", "#include \"../z_libpd.h\"");
-    std::fs::write(&z_print_util_h, data).expect("Unable to write file");
 }
