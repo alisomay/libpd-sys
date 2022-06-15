@@ -28,7 +28,13 @@ const PD_UTILS: &str = "true";
 const PD_FLOATSIZE: &str = "64";
 
 #[cfg(target_os = "windows")]
-const WISH: &str = "wish86.exe";
+/// This is needed for the GUI functions to work properly with new Pd binaries on Windows.
+///
+/// This will be transformed to -DWISH="\"wish86.exe\"" as a c flag
+/// and will be read as "wish86.exe" in C code.
+///
+/// You may check the pd [source](https://github.com/pure-data/pure-data/blob/master/src/s_inter.c) to see where it is defined.
+const WISH: &str = "\"\\\"wish86.exe\\\"\"";
 
 fn main() {
     // Directories
@@ -124,7 +130,7 @@ fn main() {
             .define("PD_LOCALE", PD_LOCALE)
             .define("PD_MULTI", pd_multi)
             .define("PD_UTILS", PD_UTILS)
-            .cflag(format!("-D{}", WISH))
+            .cflag(format!("-DWISH={}", WISH))
             .cflag(format!("-I{}", pd_source.to_str().unwrap()))
             .cflag(format!("-I{}", libpd_wrapper_dir.to_str().unwrap()))
             .cflag(format!("-I{}", libpd_wrapper_util_dir.to_str().unwrap()))
@@ -292,7 +298,7 @@ fn main() {
         .parse_callbacks(Box::new(bindgen::CargoCallbacks));
     #[cfg(target_os = "windows")]
     let bindings = bindings_builder
-        .clang_arg(format!("-D{}", WISH))
+        .clang_arg(format!("-DWISH={}", WISH))
         .generate()
         .expect("Unable to generate bindings");
 
@@ -306,6 +312,7 @@ fn main() {
     bindings
         .write_to_file(out_path.join("bindings.rs"))
         .expect("Couldn't write bindings!");
+    //panic!();
 }
 
 /// Parsed version of a target triple.
