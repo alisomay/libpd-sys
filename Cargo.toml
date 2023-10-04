@@ -1,6 +1,6 @@
 [package]
 name = "libpd-sys"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["alisomay <alisomay@runbox.com>"]
 edition = "2021"
 license = "BSD-3-Clause"
@@ -20,6 +20,6 @@ exclude = [
 ]
 
 [build-dependencies]
-cmake = "0.1.48"
-bindgen = "0.59.2"
+cmake = "0.1.50"
+bindgen = "0.68.1"
 
