@@ -1,4 +1,4 @@
 [submodule "libpd"]
-path = libpd
-url = https://github.com/alisomay/libpd.git
-branch = libpdrs
+	path = libpd
+	url = https://github.com/alisomay/libpd.git
+	branch = extended

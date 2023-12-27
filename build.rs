@@ -22,9 +22,11 @@ use std::{
 // PORTAUDIO=true: compile with portaudio support (currently JAVA jni only)
 // JAVA_HOME=/path/to/jdk: specify the path to the Java Development Kit
 
-const PD_EXTRA: &str = "true";
 const PD_LOCALE: &str = "false";
+const PD_MULTI: &str = "true";
 const PD_UTILS: &str = "true";
+const PD_EXTRA: &str = "true";
+const LIBPD_RS_EXTRA: &str = "true";
 const PD_FLOATSIZE: &str = "64";
 
 #[cfg(target_os = "windows")]
@@ -45,10 +47,6 @@ fn main() {
     let libpd_wrapper_dir = libpd_dir.join("libpd_wrapper");
     let libpd_wrapper_util_dir = libpd_wrapper_dir.join("util");
     let externals_dir = libpd_wrapper_dir.join("libpd_rs_bundled").join("externals");
-
-    // Currently we're not compiling with multi instance support.
-    let pd_multi = "false";
-    let pd_multi_flag = false;
 
     // Get info about the target.
     let target_info = get_target_info();
@@ -126,33 +124,17 @@ fn main() {
         };
 
         let lib_destination = Config::new("libpd")
-            .define("PD_EXTRA", PD_EXTRA)
             .define("PD_LOCALE", PD_LOCALE)
-            .define("PD_MULTI", pd_multi)
+            .define("PD_MULTI", PD_MULTI)
             .define("PD_UTILS", PD_UTILS)
-            .cflag(format!("-DWISH={}", WISH))
-            .cflag(format!("-I{}", pd_source.to_str().unwrap()))
-            .cflag(format!("-I{}", libpd_wrapper_dir.to_str().unwrap()))
-            .cflag(format!("-I{}", libpd_wrapper_util_dir.to_str().unwrap()))
-            .cflag(format!(
-                "-I{}",
-                externals_dir.join("freeverb").to_str().unwrap()
-            ))
-            .cflag(format!(
-                "-I{}",
-                externals_dir.join("ggee").to_str().unwrap()
-            ))
-            .cflag(format!(
-                "-I{}",
-                libpd_wrapper_dir
-                    .join("libpd_rs_bundled")
-                    .join("header")
-                    .to_str()
-                    .unwrap()
-            ))
-            .cflag(format!("-DPD_FLOATSIZE={PD_FLOATSIZE}"))
+            .define("PD_EXTRA", PD_EXTRA)
+            .define("LIBPD_RS_EXTRA", LIBPD_RS_EXTRA)
             .define("CMAKE_THREAD_LIBS_INIT", pthread_lib_path.to_str().unwrap())
             .define("PTHREADS_INCLUDE_DIR", pthread_include.to_str().unwrap())
+            .cflag(format!("-DWISH={}", WISH))
+            .cflag(format!("-I{}", libpd_wrapper_dir.to_str().unwrap()))
+            .cflag(format!("-I{}", pd_source.to_str().unwrap()))
+            .cflag(format!("-DPD_FLOATSIZE={PD_FLOATSIZE}"))
             .no_build_target(true)
             .always_configure(true)
             .very_verbose(true)
@@ -171,7 +153,7 @@ fn main() {
         // Link pthread
         println!("cargo:rustc-link-lib=static={}", pthread_lib_name);
         // Link libpd
-        if !pd_multi_flag {
+        if !matches!(PD_MULTI, "true") {
             println!("cargo:rustc-link-lib=static=libpd-static");
         } else {
             println!("cargo:rustc-link-lib=static=libpd-multi-static");
@@ -183,29 +165,13 @@ fn main() {
         // I love linux.. everything is concise and simple :)
 
         let lib_destination = Config::new("libpd")
-            .define("PD_EXTRA", PD_EXTRA)
             .define("PD_LOCALE", PD_LOCALE)
-            .define("PD_MULTI", pd_multi)
+            .define("PD_MULTI", PD_MULTI)
             .define("PD_UTILS", PD_UTILS)
-            .cflag(format!("-I{}", pd_source.to_str().unwrap()))
+            .define("PD_EXTRA", PD_EXTRA)
+            .define("LIBPD_RS_EXTRA", LIBPD_RS_EXTRA)
             .cflag(format!("-I{}", libpd_wrapper_dir.to_str().unwrap()))
-            .cflag(format!("-I{}", libpd_wrapper_util_dir.to_str().unwrap()))
-            .cflag(format!(
-                "-I{}",
-                externals_dir.join("freeverb").to_str().unwrap()
-            ))
-            .cflag(format!(
-                "-I{}",
-                externals_dir.join("ggee").to_str().unwrap()
-            ))
-            .cflag(format!(
-                "-I{}",
-                libpd_wrapper_dir
-                    .join("libpd_rs_bundled")
-                    .join("header")
-                    .to_str()
-                    .unwrap()
-            ))
+            .cflag(format!("-I{}", pd_source.to_str().unwrap()))
             .cflag(format!("-DPD_FLOATSIZE={PD_FLOATSIZE}"))
             .no_build_target(true)
             .always_configure(true)
@@ -215,7 +181,7 @@ fn main() {
         let library_root = lib_destination.join("build/libs");
         println!("cargo:rustc-link-search={}", library_root.to_string_lossy());
 
-        if !pd_multi_flag {
+        if !matches!(PD_MULTI, "true") {
             println!("cargo:rustc-link-lib=static=pd");
         } else {
             println!("cargo:rustc-link-lib=static=pd-multi");
@@ -225,31 +191,15 @@ fn main() {
     #[cfg(target_os = "macos")]
     {
         let lib_destination = Config::new("libpd")
-            .define("PD_EXTRA", PD_EXTRA)
             .define("PD_LOCALE", PD_LOCALE)
-            .define("PD_MULTI", pd_multi)
+            .define("PD_MULTI", PD_MULTI)
             .define("PD_UTILS", PD_UTILS)
-            .cflag(format!("-I{}", pd_source.to_str().unwrap()))
-            .cflag(format!("-I{}", libpd_wrapper_dir.to_str().unwrap()))
-            .cflag(format!("-I{}", libpd_wrapper_util_dir.to_str().unwrap()))
-            .cflag(format!(
-                "-I{}",
-                externals_dir.join("freeverb").to_str().unwrap()
-            ))
-            .cflag(format!(
-                "-I{}",
-                externals_dir.join("ggee").to_str().unwrap()
-            ))
-            .cflag(format!(
-                "-I{}",
-                libpd_wrapper_dir
-                    .join("libpd_rs_bundled")
-                    .join("header")
-                    .to_str()
-                    .unwrap()
-            ))
-            .cflag(format!("-DPD_FLOATSIZE={PD_FLOATSIZE}"))
+            .define("PD_EXTRA", PD_EXTRA)
+            .define("LIBPD_RS_EXTRA", LIBPD_RS_EXTRA)
             .define("CMAKE_OSX_ARCHITECTURES", "x86_64;arm64")
+            .cflag(format!("-I{}", libpd_wrapper_dir.to_str().unwrap()))
+            .cflag(format!("-I{}", pd_source.to_str().unwrap()))
+            .cflag(format!("-DPD_FLOATSIZE={PD_FLOATSIZE}"))
             .no_build_target(true)
             .always_configure(true)
             .very_verbose(true)
@@ -261,7 +211,7 @@ fn main() {
         println!("cargo:rustc-link-search={}", library_root.to_string_lossy());
 
         // Link libpd
-        if !pd_multi_flag {
+        if !matches!(PD_MULTI, "true") {
             // Thins the fat library with lipo, rust linker does not like fat libs..
             thin_fat_lib(&library_root, false);
             match &*target_info.arch {
@@ -287,14 +237,12 @@ fn main() {
     // Generate bindings
     let mut bindings_builder = bindgen::Builder::default()
         .header("wrapper.h")
-        .clang_arg(format!("-I{}", pd_source.to_str().unwrap()))
         .clang_arg(format!("-I{}", libpd_wrapper_dir.to_str().unwrap()))
-        .clang_arg(format!("-I{}", libpd_wrapper_util_dir.to_str().unwrap()))
-        // This is important to generate the right types.
+        .clang_arg(format!("-I{}", pd_source.to_str().unwrap()))
         .clang_arg(format!("-DPD_FLOATSIZE={PD_FLOATSIZE}"))
         // Tell cargo to invalidate the built crate whenever any of the
         // included header files changed.
-        .parse_callbacks(Box::new(bindgen::CargoCallbacks));
+        .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()));
     #[cfg(target_os = "windows")]
     let bindings = bindings_builder
         .clang_arg(format!("-DWISH={}", WISH))
