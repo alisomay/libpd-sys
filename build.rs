@@ -41,6 +41,7 @@ const WISH: &str = "\"\\\"wish86.exe\\\"\"";
 fn main() {
     // Get the target endianness from Cargo
     let target_endian = std::env::var("CARGO_CFG_TARGET_ENDIAN").unwrap();
+
     // Prepare the endianness defines
     let endian_define = match target_endian.as_str() {
         "little" => vec!["-DLITTLE_ENDIAN=1234", "-DBYTE_ORDER=LITTLE_ENDIAN"],
@@ -62,6 +63,13 @@ fn main() {
 
     #[cfg(target_os = "windows")]
     {
+        let profile = std::env::var("PROFILE").unwrap();
+        let crt_linkage = if profile == "release" {
+            "MultiThreadedDLL"
+        } else {
+            "MultiThreadedDebugDLL"
+        };
+
         // For windows we need to link pthread.
         // There are some prebuilt libraries for msvc and mingw for architectures x64 and arm64.
         // Mingw support is not tested yet but should work.
@@ -140,6 +148,7 @@ fn main() {
             .define("LIBPD_RS_EXTRA", LIBPD_RS_EXTRA)
             .define("PTHREADS_LIB", pthread_lib_path.to_str().unwrap())
             .define("PTHREADS_INCLUDE_DIR", pthread_include.to_str().unwrap())
+            .define("CMAKE_MSVC_RUNTIME_LIBRARY", crt_linkage)
             .cflag(format!("-DWISH={}", WISH))
             .cflag(format!("-I{}", libpd_wrapper_dir.to_str().unwrap()))
             .cflag(format!("-I{}", pd_source.to_str().unwrap()))
