@@ -241,9 +241,11 @@ fn main() {
         .clang_arg(format!("-I{}", pd_source.to_str().unwrap()))
         .clang_arg(format!("-DPD_FLOATSIZE={PD_FLOATSIZE}"))
         .clang_arg("-DPD_INTERNAL=0") // Undefine PD_INTERNAL because it is not needed for bindings and cmake complains about it.
+        .clang_arg("-std=c11")
         // Tell cargo to invalidate the built crate whenever any of the
         // included header files changed.
         .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()));
+
     #[cfg(target_os = "windows")]
     let bindings = bindings_builder
         .clang_arg(format!("-DWISH={}", WISH))
