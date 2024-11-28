@@ -42,7 +42,7 @@ fn main() {
     // Get the target endianness from Cargo
     let target_endian = std::env::var("CARGO_CFG_TARGET_ENDIAN").unwrap();
 
-    // Prepare the endianness defines
+    // Prepare the endianness defines.
     let endian_define = match target_endian.as_str() {
         "little" => vec!["-DLITTLE_ENDIAN=1234", "-DBYTE_ORDER=LITTLE_ENDIAN"],
         "big" => vec!["-DBIG_ENDIAN=4321", "-DBYTE_ORDER=BIG_ENDIAN"],
@@ -69,6 +69,7 @@ fn main() {
         let pthread_root = project_dir.join("pthreads");
 
         let compiler = target_info.compiler.unwrap();
+
         let (pthread_lib_root, pthread_lib_path, pthread_lib_name, pthread_include): (
             PathBuf,
             PathBuf,
@@ -77,18 +78,21 @@ fn main() {
         ) = match &*target_info.arch {
             "x86_64" => match compiler.as_str() {
                 "msvc" => {
-                    let lib_root = pthread_root
+                    let base_dir = pthread_root
                         .join("msvc")
-                        .join("pthreads_x64-windows-static")
-                        .join("lib");
+                        .join("pthreads_x64-windows-static");
+
+                    let (lib_dir, lib_name) = if cfg!(debug_assertions) {
+                        (base_dir.join("debug").join("lib"), "pthreadVC3d")
+                    } else {
+                        (base_dir.join("lib"), "pthreadVC3")
+                    };
+
                     (
-                        lib_root.clone(),
-                        lib_root.join("pthreadVC3.lib"),
-                        "pthreadVC3",
-                        pthread_root
-                            .join("msvc")
-                            .join("pthreads_x64-windows-static")
-                            .join("include"),
+                        lib_dir.clone(),
+                        lib_dir.join(format!("{}.lib", lib_name)),
+                        lib_name,
+                        base_dir.join("include"),
                     )
                 }
                 "gnu" => {
@@ -96,7 +100,6 @@ fn main() {
                     (
                         lib_root.clone(),
                         lib_root.join("libpthreadGC2.a"),
-                        // Re-visit this
                         "pthreadGC2",
                         pthread_root.join("gnu").join("include"),
                     )
@@ -105,18 +108,21 @@ fn main() {
             },
             "aarch64" => match compiler.as_str() {
                 "msvc" => {
-                    let lib_root = pthread_root
+                    let base_dir = pthread_root
                         .join("msvc")
-                        .join("pthreads_arm64-windows-static")
-                        .join("lib");
+                        .join("pthreads_arm64-windows-static");
+
+                    let (lib_dir, lib_name) = if cfg!(debug_assertions) {
+                        (base_dir.join("debug").join("lib"), "pthreadVC3d")
+                    } else {
+                        (base_dir.join("lib"), "pthreadVC3")
+                    };
+
                     (
-                        lib_root.clone(),
-                        lib_root.join("pthreadVC3.lib"),
-                        "pthreadVC3",
-                        pthread_root
-                            .join("msvc")
-                            .join("pthreads_arm64-windows-static")
-                            .join("include"),
+                        lib_dir.clone(),
+                        lib_dir.join(format!("{}.lib", lib_name)),
+                        lib_name,
+                        base_dir.join("include"),
                     )
                 }
                 "gnu" => {
@@ -124,7 +130,6 @@ fn main() {
                     (
                         lib_root.clone(),
                         lib_root.join("libpthreadGC2.a"),
-                        // Re-visit this
                         "pthreadGC2",
                         pthread_root.join("gnu").join("include"),
                     )
@@ -135,9 +140,19 @@ fn main() {
         };
 
         let mut lib_destination = Config::new("libpd");
+
         if compiler.as_str() == "msvc" {
-            lib_destination.define("LIBPD_CRT_LINKAGE", "dynamic");
+            // This is a complicated one..
+            // So the pthreads library is built with the /MD flag for CRT.
+            // One would have expected that the d suffixed prebuilt libraries would be built with /MDd flag.
+            // Unfortunately this is not the case, it is not easy to rebuild the pthreads library with /MDd flag.
+            // This is why we are forcing libpd to use the /MD flag even in debug mode.
+            // Because mismatched CRT flags can cause linking runtime errors.
+            // Another thing is that rust, if not stated otherwise, dynamic CRT flags and it is better to stay in that domain
+            // since forcing /MT or /MTd flags can cause other problems.
+            lib_destination.define("CMAKE_MSVC_RUNTIME_LIBRARY", "MultiThreadedDLL");
         }
+
         lib_destination
             .define("PD_LOCALE", PD_LOCALE)
             .define("PD_MULTI", PD_MULTI)
@@ -155,7 +170,6 @@ fn main() {
             .very_verbose(true);
 
         let lib_destination = lib_destination.build();
-
         let library_root = lib_destination.join("build/libs");
 
         // Look for pthread
@@ -163,6 +177,7 @@ fn main() {
             "cargo:rustc-link-search={}",
             pthread_lib_root.to_string_lossy()
         );
+
         // Look for libpd
         println!("cargo:rustc-link-search={}", library_root.to_string_lossy());
 
@@ -282,7 +297,6 @@ fn main() {
     bindings
         .write_to_file(out_path.join("bindings.rs"))
         .expect("Couldn't write bindings!");
-    //panic!();
 }
 
 /// Parsed version of a target triple.
