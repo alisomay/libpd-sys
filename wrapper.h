@@ -21,7 +21,7 @@
 
 // Headers in libpd_wrapper
 
-#include "libpd/libpd_wrapper/util/ringbuffer.h"
+#include "libpd/libpd_wrapper/util/z_ringbuffer.h"
 #include "libpd/libpd_wrapper/util/z_print_util.h"
 #include "libpd/libpd_wrapper/util/z_queued.h"
 #include "libpd/libpd_wrapper/z_hooks.h"
