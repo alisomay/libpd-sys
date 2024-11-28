@@ -63,14 +63,6 @@ fn main() {
 
     #[cfg(target_os = "windows")]
     {
-        // Determine the appropriate CRT linkage
-        let profile = std::env::var("PROFILE").unwrap();
-        let msvc_runtime_flag = if profile == "release" {
-            "/MD" // Multithreaded DLL
-        } else {
-            "/MDd" // Multithreaded Debug DLL
-        };
-
         // For windows we need to link pthread.
         // There are some prebuilt libraries for msvc and mingw for architectures x64 and arm64.
         // Mingw support is not tested yet but should work.
@@ -144,12 +136,7 @@ fn main() {
 
         let mut lib_destination = Config::new("libpd");
         if compiler.as_str() == "msvc" {
-            lib_destination.define("CMAKE_C_FLAGS_INIT", msvc_runtime_flag);
-
-            lib_destination.cflag("/MD"); // Force /MD runtime library
-            lib_destination.cflag("/experimental:c11atomics");
-            lib_destination.cflag("/wd4091");
-            lib_destination.cflag("/wd4996");
+            lib_destination.define("LIBPD_CRT_LINKAGE", "dynamic");
         }
         lib_destination
             .define("PD_LOCALE", PD_LOCALE)
