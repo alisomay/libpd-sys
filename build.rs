@@ -138,7 +138,7 @@ fn main() {
             .define("PD_UTILS", PD_UTILS)
             .define("PD_EXTRA", PD_EXTRA)
             .define("LIBPD_RS_EXTRA", LIBPD_RS_EXTRA)
-            .define("CMAKE_THREAD_LIBS_INIT", pthread_lib_path.to_str().unwrap())
+            .define("PTHREADS_LIB", pthread_lib_path.to_str().unwrap())
             .define("PTHREADS_INCLUDE_DIR", pthread_include.to_str().unwrap())
             .cflag(format!("-DWISH={}", WISH))
             .cflag(format!("-I{}", libpd_wrapper_dir.to_str().unwrap()))
