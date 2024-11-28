@@ -39,6 +39,15 @@ const PD_FLOATSIZE: &str = "64";
 const WISH: &str = "\"\\\"wish86.exe\\\"\"";
 
 fn main() {
+    // Get the target endianness from Cargo
+    let target_endian = std::env::var("CARGO_CFG_TARGET_ENDIAN").unwrap();
+    // Prepare the endianness defines
+    let endian_define = match target_endian.as_str() {
+        "little" => vec!["-DLITTLE_ENDIAN=1234", "-DBYTE_ORDER=LITTLE_ENDIAN"],
+        "big" => vec!["-DBIG_ENDIAN=4321", "-DBYTE_ORDER=BIG_ENDIAN"],
+        _ => panic!("Unknown target endian: {}", target_endian),
+    };
+
     // Directories
     let project_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
 
@@ -240,11 +249,15 @@ fn main() {
         .clang_arg(format!("-I{}", libpd_wrapper_dir.to_str().unwrap()))
         .clang_arg(format!("-I{}", pd_source.to_str().unwrap()))
         .clang_arg(format!("-DPD_FLOATSIZE={PD_FLOATSIZE}"))
-        .clang_arg("-DPD_INTERNAL=0") // Undefine PD_INTERNAL because it is not needed for bindings and cmake complains about it.
-        .clang_arg("-std=c11")
+        .clang_arg("-DPD_INTERNAL=1")
         // Tell cargo to invalidate the built crate whenever any of the
         // included header files changed.
         .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()));
+
+    // Add the endianness defines
+    for arg in endian_define {
+        bindings_builder = bindings_builder.clang_arg(arg);
+    }
 
     #[cfg(target_os = "windows")]
     let bindings = bindings_builder

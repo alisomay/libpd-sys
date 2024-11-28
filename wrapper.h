@@ -1,4 +1,4 @@
-// Headers in pure data submodule
+// Headers from c++11
 
 // #include "libpd/pure-data/src/d_soundfile.h"
 // #include "libpd/pure-data/src/g_all_guis.h"
@@ -21,7 +21,9 @@
 
 // Headers in libpd_wrapper
 
-#include "libpd/libpd_wrapper/util/z_ringbuffer.h"
+// It is not easy to bind this due to the inclusion of atomic_int, please open an issue if you need this
+// libpd-rs does not need this header bound.
+// #include "libpd/libpd_wrapper/util/z_ringbuffer.h"
 #include "libpd/libpd_wrapper/util/z_print_util.h"
 #include "libpd/libpd_wrapper/util/z_queued.h"
 #include "libpd/libpd_wrapper/z_hooks.h"
