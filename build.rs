@@ -63,11 +63,12 @@ fn main() {
 
     #[cfg(target_os = "windows")]
     {
+        // Determine the appropriate CRT linkage
         let profile = std::env::var("PROFILE").unwrap();
-        let crt_linkage = if profile == "release" {
-            "MultiThreadedDLL"
+        let msvc_runtime_flag = if profile == "release" {
+            "/MD" // Multithreaded DLL
         } else {
-            "MultiThreadedDebugDLL"
+            "/MDd" // Multithreaded Debug DLL
         };
 
         // For windows we need to link pthread.
@@ -75,13 +76,14 @@ fn main() {
         // Mingw support is not tested yet but should work.
         let pthread_root = project_dir.join("pthreads");
 
+        let compiler = target_info.compiler.unwrap();
         let (pthread_lib_root, pthread_lib_path, pthread_lib_name, pthread_include): (
             PathBuf,
             PathBuf,
             &str,
             PathBuf,
         ) = match &*target_info.arch {
-            "x86_64" => match &*(target_info.compiler.unwrap()) {
+            "x86_64" => match compiler.as_str() {
                 "msvc" => {
                     let lib_root = pthread_root
                         .join("msvc")
@@ -109,7 +111,7 @@ fn main() {
                 }
                 _ => panic!("Unsupported compiler"),
             },
-            "aarch64" => match &*(target_info.compiler.unwrap()) {
+            "aarch64" => match compiler.as_str() {
                 "msvc" => {
                     let lib_root = pthread_root
                         .join("msvc")
@@ -140,7 +142,16 @@ fn main() {
             _ => panic!("Unsupported architecture: {}", target_info.arch),
         };
 
-        let lib_destination = Config::new("libpd")
+        let mut lib_destination = Config::new("libpd");
+        if compiler.as_str() == "msvc" {
+            lib_destination.define("CMAKE_C_FLAGS_INIT", msvc_runtime_flag);
+
+            lib_destination.cflag("/MD"); // Force /MD runtime library
+            lib_destination.cflag("/experimental:c11atomics");
+            lib_destination.cflag("/wd4091");
+            lib_destination.cflag("/wd4996");
+        }
+        lib_destination
             .define("PD_LOCALE", PD_LOCALE)
             .define("PD_MULTI", PD_MULTI)
             .define("PD_UTILS", PD_UTILS)
@@ -148,15 +159,15 @@ fn main() {
             .define("LIBPD_RS_EXTRA", LIBPD_RS_EXTRA)
             .define("PTHREADS_LIB", pthread_lib_path.to_str().unwrap())
             .define("PTHREADS_INCLUDE_DIR", pthread_include.to_str().unwrap())
-            .define("CMAKE_MSVC_RUNTIME_LIBRARY", crt_linkage)
             .cflag(format!("-DWISH={}", WISH))
             .cflag(format!("-I{}", libpd_wrapper_dir.to_str().unwrap()))
             .cflag(format!("-I{}", pd_source.to_str().unwrap()))
             .cflag(format!("-DPD_FLOATSIZE={PD_FLOATSIZE}"))
             .no_build_target(true)
             .always_configure(true)
-            .very_verbose(true)
-            .build();
+            .very_verbose(true);
+
+        let lib_destination = lib_destination.build();
 
         let library_root = lib_destination.join("build/libs");
 
