@@ -1,6 +1,7 @@
 # libpd-sys
 
 [![Build Status](https://github.com/alisomay/libpd-sys/workflows/Build/badge.svg)](https://github.com/alisomay/libpd-sys/actions?query=workflow%3ABuild)
+[![License: BSD-3-Clause](https://img.shields.io/badge/License-BSD_3--Clause-green.svg)](https://opensource.org/licenses/BSD-3-Clause)
 
 Rust bindings for [libpd](https://github.com/libpd/libpd).
 
@@ -35,7 +36,7 @@ Or if you wish you can add support for the unsupported platforms.
   - windows:
     - msvc
       - `x86_64` ✅
-      - `aarch64` (not tested but should work)
+      - `aarch64` ✅
     - gnu
       - `x86_64` (not tested but should work)
       - `aarch64` (not tested but should work)
